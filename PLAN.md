@@ -103,6 +103,22 @@ sealdrop/
 * README.md: what it is, demo GIF, how to run, results table (test vectors passed, fuzz executions, benchmark numbers, size overhead), limitations, the "not audited" notice.
 * Done when: a security engineer could read the repo in 5 minutes and understand the design and its limits.
 
+### Milestone 7: identity and delegated access for AI agents
+* Goal: AI agents get their own identity. A user can give an agent scoped, short lived, revocable access to specific files, and every action is recorded as which agent acted and on whose behalf. The agent never gets the user's keys or a shared long lived credential, and the server still never sees plaintext. Do not change or break anything that already works.
+* First: a one page plain language primer on authentication vs authorization, OAuth 2.0 token exchange (RFC 8693) and the actor (`act`) claim, how a JWT is signed and verified, least privilege, and why long lived shared credentials are dangerous for AI agents. Wait for "continue" before writing code.
+* Build in this order, committing after each step:
+  1. Agent registration: each agent generates its own encryption keypair (its private key never leaves the agent) and gets its own client identity.
+  2. User grants: a signed in user grants an agent access to specific files, with specific actions (list, download, upload, share) and an expiry. Deny by default.
+  3. Short lived scoped tokens: the Go server issues signed JWTs a few minutes long through OAuth 2.0 token exchange, with the actor claim recording which agent acts on whose behalf. Refresh only works while the grant is valid. Use well known JWT and OAuth libraries; never write our own token signing.
+  4. One policy check: a single, well tested function that every request passes through.
+  5. Key wrapping: for granted files only, the user's client wraps the file key to the agent's public key.
+  6. Revocation: revoking a grant stops new tokens immediately and deletes the agent's wrapped keys.
+  7. Audit log: record agent, user acted for, action, file, decision and reason for every request, with a simple page to view it.
+  8. MCP server in Python (new `mcp/` folder): official MCP SDK, tools for list, download, upload and share that call the Go server. Decryption via a small Rust command line tool built from the core library (no Python bindings). The agent's private key and tokens stay inside the MCP server process and are never returned in a tool result, so the model never sees a credential.
+  9. Observability: structured logs with request IDs, metrics for requests, denials and latency, and a health endpoint.
+  10. Attack tests, last: expired token replay; an action that was not granted; agent A using agent B's token; access after revocation; a forged or tampered token; a real agent run where a file contains a prompt injection telling the agent to fetch files outside its grant.
+* Done when: report how many attacks were blocked out of how many were tried, and the median policy check time, in outputs/results.md. Never invent numbers.
+
 ## Resume lines to fill (from outputs only, never guess)
 
 * Built a Rust library for post quantum hybrid encryption (X25519 + ML-KEM-768, IETF X-Wing draft) and post quantum signatures (ML-DSA-65), passing {N} official test vectors with {E} fuzzing executions and zero crashes
