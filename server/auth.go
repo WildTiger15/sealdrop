@@ -125,16 +125,16 @@ type usernameReq struct {
 	Username string `json:"username"`
 }
 
-func readUsername(r *http.Request) (string, bool) {
+func readUsername(w http.ResponseWriter, r *http.Request) (string, bool) {
 	var req usernameReq
-	if err := json.NewDecoder(http.MaxBytesReader(nil, r.Body, 1024)).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
 		return "", false
 	}
 	return req.Username, usernameRe.MatchString(req.Username)
 }
 
 func (a *Auth) RegisterBegin(w http.ResponseWriter, r *http.Request) {
-	username, ok := readUsername(r)
+	username, ok := readUsername(w, r)
 	if !ok {
 		httpError(w, http.StatusBadRequest, "username must be 3-32 chars: a-z 0-9 _")
 		return
@@ -187,7 +187,7 @@ func (a *Auth) RegisterFinish(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) LoginBegin(w http.ResponseWriter, r *http.Request) {
-	username, ok := readUsername(r)
+	username, ok := readUsername(w, r)
 	if !ok {
 		httpError(w, http.StatusBadRequest, "invalid username")
 		return

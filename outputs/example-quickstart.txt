@@ -1,0 +1,8 @@
+X-Wing: public key 1216 B, ciphertext 1120 B, secrets equal: true
+ML-DSA-65: verifying key 1952 B, signature 3309 B, valid: true, wrong message rejected: true
+sealed 3000 B -> 7538 B (overhead 4538 B), sender fingerprint d8e6a2c54db9f8e7..
+bob opened it: plaintext matches: true
+eve opens it:            Some(DecryptionFailed)
+one bit flipped:         Some(BadSignature)
+checked against eve key: Some(BadSignature)
+wrapped identity: 126 B blob, unwraps to the same keys: true, under another username: Some(DecryptionFailed)

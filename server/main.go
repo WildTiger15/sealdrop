@@ -17,10 +17,18 @@ import (
 )
 
 func main() {
-	addr := flag.String("addr", "localhost:8080", "listen address")
-	dbPath := flag.String("db", "data/sealdrop.db", "SQLite database file")
-	static := flag.String("static", "../web/dist", "directory with the built web client")
-	origin := flag.String("origin", "http://localhost:8080", "public origin of the site (WebAuthn RP origin)")
+	// Hosting platforms (e.g. Render) pass the port and public URL as env vars.
+	defaultAddr, defaultOrigin := "localhost:8080", "http://localhost:8080"
+	if p := os.Getenv("PORT"); p != "" {
+		defaultAddr = ":" + p
+	}
+	if o := os.Getenv("RENDER_EXTERNAL_URL"); o != "" {
+		defaultOrigin = o
+	}
+	addr := flag.String("addr", defaultAddr, "listen address")
+	dbPath := flag.String("db", envOr("SEALDROP_DB", "data/sealdrop.db"), "SQLite database file")
+	static := flag.String("static", envOr("SEALDROP_STATIC", "../web/dist"), "directory with the built web client")
+	origin := flag.String("origin", envOr("SEALDROP_ORIGIN", defaultOrigin), "public origin of the site (WebAuthn RP origin)")
 	flag.Parse()
 
 	u, err := url.Parse(*origin)
@@ -57,6 +65,13 @@ func main() {
 	}
 	log.Printf("SealDrop listening on %s (origin %s)", *addr, *origin)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
 
 func routes(auth *Auth, api *API, static string) *http.ServeMux {
