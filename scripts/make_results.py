@@ -66,7 +66,7 @@ w(f"| NIST ACVP ML-DSA-65 keyGen | {kg.group(1)}/{kg.group(2)} |")
 w(f"| NIST ACVP ML-DSA-65 sigGen | {sg.group(1)}/{sg.group(2)} |")
 w(f"| NIST ACVP ML-DSA-65 sigVer (36 of them must-reject) | {sv.group(1)}/{sv.group(2)} |")
 w(f"| **Official vectors total** | **{official}/{official_total}** |")
-w(f"| Single-bit flips of a sealed file rejected | {flips.group(1)}/{flips.group(2)} |")
+w(f"| One bit flipped, in every byte position of a sealed file: rejected | {flips.group(1)}/{flips.group(2)} |")
 w(f"| Rust core tests | {total_tests} passed, {failed} failed |")
 e2e = (OUT / "e2e.txt").read_text(encoding="utf-8")
 oks = e2e.count("  ok  ")
@@ -168,4 +168,34 @@ if extra.exists():
 
 (OUT / "results.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 print("wrote outputs/results.md")
-sys.exit(0)
+
+
+# ---- README.md from scripts/README.template.md, with the same numbers ----
+def block(lines_):
+    return "\n".join(l.rstrip() for l in lines_)
+
+
+summary = {
+    "N": str(official), "XW": f"{xw.group(1)}/{xw.group(2)}",
+    "MLDSA": f"{int(kg.group(1)) + int(sg.group(1)) + int(sv.group(1))}/{int(kg.group(2)) + int(sg.group(2)) + int(sv.group(2))}",
+    "E": f"{fuzz_total:,}", "C": str(fuzz_crashes), "FLIPS": f"{flips.group(1)}/{flips.group(2)}",
+    "X": f"{(vals['KEM encapsulate'][0] + vals['KEM decapsulate'][0]) / 1e6:.2f} ms",
+    "X_CL": f"{(vals['KEM encapsulate'][1] + vals['KEM decapsulate'][1]) / 1e6:.2f} ms",
+    "S": f"{vals['Sign'][0] / 1e6:.2f} ms", "V": f"{vals['Verify'][0] / 1e6:.2f} ms",
+    "S_CL": f"{vals['Sign'][1] / 1e6:.3f} ms", "V_CL": f"{vals['Verify'][1] / 1e6:.3f} ms",
+    "Y": f"{y:.0f} MiB/s", "Z": f"{ratios[16777216]:.2f}×",
+    "BROWSER": f"{bb['seal_ms']:.1f} ms / {bb['open_ms']:.1f} ms",
+    "E2E": f"{oks} checks passed" + (", zero knowledge check passed" if zk and zk.group(1) == "PASSED" else ""),
+    "QUICKSTART": block((OUT / "example-quickstart.txt").read_text(encoding="utf-8").strip().splitlines()),
+    "KAT_LINES": block(re.findall(r"(?:X-Wing official vectors|ML-DSA-65 ACVP \w+) passed: \d+/\d+", tests)),
+    "E2E_LINES": block(l for l in e2e.strip().splitlines() if not l.startswith("  prefix")),
+}
+(OUT / "summary.json").write_text(json.dumps({k: v for k, v in summary.items() if "\n" not in v}, indent=1), encoding="utf-8")
+text = (ROOT / "scripts" / "README.template.md").read_text(encoding="utf-8")
+for k, v in summary.items():
+    text = text.replace("{" + k + "}", v)
+left = re.findall(r"\{[A-Z_]+\}", text)
+if left:
+    sys.exit(f"unfilled README placeholders: {left}")
+(ROOT / "README.md").write_text(text, encoding="utf-8")
+print("wrote README.md from scripts/README.template.md")

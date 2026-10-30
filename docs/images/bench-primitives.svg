@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 306" width="760" height="306" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="13">
+<text x="0" y="20" font-size="15" font-weight="600" fill="#6b7280">Post quantum vs classic primitives (median time, lower is better)</text>
+<rect x="0" y="32" width="11" height="11" rx="2" fill="#3b6fd4"/><text x="16" y="42" fill="#6b7280">X-Wing / ML-DSA-65</text>
+<rect x="157.0" y="32" width="11" height="11" rx="2" fill="#9aa3ad"/><text x="173.0" y="42" fill="#6b7280">X25519 / Ed25519</text>
+<text x="760" y="42" text-anchor="end" fill="#6b7280">microseconds</text>
+<text x="160" y="75" text-anchor="end" fill="#6b7280">KEM keygen</text>
+<rect x="170" y="56" width="59.2" height="15" rx="3" fill="#3b6fd4"/><text x="235.2" y="68" fill="#6b7280">194 µs</text>
+<rect x="170" y="74" width="9.9" height="15" rx="3" fill="#9aa3ad"/><text x="185.9" y="86" fill="#6b7280">33 µs</text>
+<text x="160" y="121" text-anchor="end" fill="#6b7280">KEM encapsulate</text>
+<rect x="170" y="102" width="53.1" height="15" rx="3" fill="#3b6fd4"/><text x="229.1" y="114" fill="#6b7280">174 µs</text>
+<rect x="170" y="120" width="38.1" height="15" rx="3" fill="#9aa3ad"/><text x="214.1" y="132" fill="#6b7280">125 µs</text>
+<text x="160" y="167" text-anchor="end" fill="#6b7280">KEM decapsulate</text>
+<rect x="170" y="148" width="92.3" height="15" rx="3" fill="#3b6fd4"/><text x="268.3" y="160" fill="#6b7280">302 µs</text>
+<rect x="170" y="166" width="25.5" height="15" rx="3" fill="#9aa3ad"/><text x="201.5" y="178" fill="#6b7280">83 µs</text>
+<text x="160" y="213" text-anchor="end" fill="#6b7280">Sign</text>
+<rect x="170" y="194" width="480.0" height="15" rx="3" fill="#3b6fd4"/><text x="656.0" y="206" fill="#6b7280">1,573 µs</text>
+<rect x="170" y="212" width="10.1" height="15" rx="3" fill="#9aa3ad"/><text x="186.1" y="224" fill="#6b7280">33 µs</text>
+<text x="160" y="259" text-anchor="end" fill="#6b7280">Verify</text>
+<rect x="170" y="240" width="75.9" height="15" rx="3" fill="#3b6fd4"/><text x="251.9" y="252" fill="#6b7280">249 µs</text>
+<rect x="170" y="258" width="17.4" height="15" rx="3" fill="#9aa3ad"/><text x="193.4" y="270" fill="#6b7280">57 µs</text>
+</svg>

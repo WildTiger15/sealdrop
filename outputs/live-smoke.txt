@@ -1,0 +1,5 @@
+ok  alice_hm94v6 registered, keys protected by: passkey (PRF)
+ok  bob_hm94v6 registered, keys protected by: passkey (PRF)
+ok  10:54:32 PM  Sent "hello.txt" (2300 bytes) to bob_hm94v6: encrypted + signed in 17.2 ms, 4538 bytes overhead.
+ok  10:54:33 PM  Verified signature from alice_hm94v6 (169e f1b9 f536 8acc afd4 6ab9 ba2e 3f7f) and decrypted 2300 bytes in 11.4 ms.
+LIVE SMOKE TEST PASSED: bob decrypted exactly what alice sent

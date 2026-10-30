@@ -1,0 +1,49 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.53s
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.30s
+     Running `fuzz\target\x86_64-pc-windows-msvc\release\verify.exe '-artifact_prefix=C:\Users\snehd\SealDrop\core\fuzz\artifacts\verify\' -max_total_time=1800 -print_final_stats=1 'C:\Users\snehd\SealDrop\core\fuzz\corpus\verify'`
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3349556778
+INFO: Loaded 1 modules   (4833 inline 8-bit counters): 4833 [00007FF709A22248, 00007FF709A23529), 
+INFO: Loaded 1 PC tables (4833 PCs): 4833 [00007FF7099CBE20,00007FF7099DEC30), 
+INFO:        1 files found in C:\Users\snehd\SealDrop\core\fuzz\corpus\verify
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: seed corpus: files: 1 min: 8b max: 8b total: 8b rss: 42Mb
+#2	INITED cov: 229 ft: 229 corp: 1/8b exec/s: 0 rss: 43Mb
+#6	NEW    cov: 230 ft: 230 corp: 2/12b lim: 8 exec/s: 0 rss: 44Mb L: 4/8 MS: 4 CrossOver-ChangeBinInt-ChangeBinInt-EraseBytes-
+#19	REDUCE cov: 230 ft: 230 corp: 2/10b lim: 8 exec/s: 0 rss: 46Mb L: 2/8 MS: 3 ShuffleBytes-ShuffleBytes-CrossOver-
+#50	REDUCE cov: 230 ft: 230 corp: 2/9b lim: 8 exec/s: 50 rss: 51Mb L: 1/8 MS: 1 EraseBytes-
+#128	pulse  cov: 230 ft: 230 corp: 2/9b lim: 8 exec/s: 64 rss: 65Mb
+#256	pulse  cov: 230 ft: 230 corp: 2/9b lim: 8 exec/s: 19 rss: 86Mb
+#512	pulse  cov: 230 ft: 230 corp: 2/9b lim: 11 exec/s: 17 rss: 130Mb
+#853	REDUCE cov: 230 ft: 231 corp: 3/23b lim: 14 exec/s: 18 rss: 187Mb L: 14/14 MS: 3 CMP-InsertRepeatedBytes-CrossOver- DE: "\316\206\000\000\000\000\000\000"-
+#1004	REDUCE cov: 230 ft: 231 corp: 3/22b lim: 14 exec/s: 18 rss: 213Mb L: 13/13 MS: 1 EraseBytes-
+#1024	pulse  cov: 230 ft: 231 corp: 3/22b lim: 14 exec/s: 18 rss: 216Mb
+#1375	REDUCE cov: 230 ft: 231 corp: 3/20b lim: 17 exec/s: 15 rss: 275Mb L: 11/11 MS: 1 CrossOver-
+#2048	pulse  cov: 230 ft: 231 corp: 3/20b lim: 21 exec/s: 18 rss: 366Mb
+#4096	pulse  cov: 230 ft: 231 corp: 3/20b lim: 43 exec/s: 24 rss: 367Mb
+#5238	REDUCE cov: 230 ft: 231 corp: 3/16b lim: 53 exec/s: 28 rss: 367Mb L: 7/8 MS: 3 EraseBytes-ChangeBinInt-ChangeByte-
+#7775	REDUCE cov: 230 ft: 232 corp: 4/29b lim: 74 exec/s: 31 rss: 367Mb L: 13/13 MS: 2 EraseBytes-PersAutoDict- DE: "\316\206\000\000\000\000\000\000"-
+#8192	pulse  cov: 230 ft: 232 corp: 4/29b lim: 74 exec/s: 31 rss: 367Mb
+#13054	REDUCE cov: 230 ft: 232 corp: 4/27b lim: 122 exec/s: 36 rss: 367Mb L: 5/13 MS: 3 EraseBytes-CrossOver-ShuffleBytes-
+#16384	pulse  cov: 230 ft: 232 corp: 4/27b lim: 149 exec/s: 39 rss: 367Mb
+#30889	REDUCE cov: 230 ft: 232 corp: 4/26b lim: 293 exec/s: 40 rss: 367Mb L: 4/13 MS: 4 ChangeBit-ChangeBit-EraseBytes-ChangeByte-
+#32768	pulse  cov: 230 ft: 232 corp: 4/26b lim: 309 exec/s: 40 rss: 367Mb
+#65405	REDUCE cov: 230 ft: 232 corp: 4/25b lim: 634 exec/s: 39 rss: 367Mb L: 3/13 MS: 5 CrossOver-ChangeBinInt-EraseBytes-ChangeByte-EraseBytes-
+#65536	pulse  cov: 230 ft: 232 corp: 4/25b lim: 634 exec/s: 39 rss: 367Mb
+#72270	DONE   cov: 230 ft: 232 corp: 4/25b lim: 697 exec/s: 40 rss: 367Mb
+###### Recommended dictionary. ######
+"\316\206\000\000\000\000\000\000" # Uses: 5601
+###### End of recommended dictionary. ######
+Done 72270 runs in 1801 second(s)
+stat::number_of_executed_units: 72270
+stat::average_exec_per_sec:     40
+stat::new_units_added:          11
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              367
+exit=0

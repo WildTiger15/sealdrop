@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 214" width="760" height="214" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-size="13">
+<text x="0" y="20" font-size="15" font-weight="600" fill="#6b7280">Encrypt + sign a file (median throughput, higher is better)</text>
+<rect x="0" y="32" width="11" height="11" rx="2" fill="#3b6fd4"/><text x="16" y="42" fill="#6b7280">SealDrop (X-Wing + ML-DSA-65)</text>
+<rect x="239.5" y="32" width="11" height="11" rx="2" fill="#9aa3ad"/><text x="255.5" y="42" fill="#6b7280">Same format, X25519 + Ed25519</text>
+<text x="760" y="42" text-anchor="end" fill="#6b7280">MiB/s</text>
+<text x="160" y="75" text-anchor="end" fill="#6b7280">64 KiB file</text>
+<rect x="170" y="56" width="88.5" height="15" rx="3" fill="#3b6fd4"/><text x="264.5" y="68" fill="#6b7280">37 MiB/s</text>
+<rect x="170" y="74" width="480.0" height="15" rx="3" fill="#9aa3ad"/><text x="656.0" y="86" fill="#6b7280">199 MiB/s</text>
+<text x="160" y="121" text-anchor="end" fill="#6b7280">1 MiB file</text>
+<rect x="170" y="102" width="302.9" height="15" rx="3" fill="#3b6fd4"/><text x="478.9" y="114" fill="#6b7280">126 MiB/s</text>
+<rect x="170" y="120" width="468.3" height="15" rx="3" fill="#9aa3ad"/><text x="644.3" y="132" fill="#6b7280">195 MiB/s</text>
+<text x="160" y="167" text-anchor="end" fill="#6b7280">16 MiB file</text>
+<rect x="170" y="148" width="439.6" height="15" rx="3" fill="#3b6fd4"/><text x="615.6" y="160" fill="#6b7280">183 MiB/s</text>
+<rect x="170" y="166" width="476.1" height="15" rx="3" fill="#9aa3ad"/><text x="652.1" y="178" fill="#6b7280">198 MiB/s</text>
+</svg>

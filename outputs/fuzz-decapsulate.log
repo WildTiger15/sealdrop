@@ -1,0 +1,38 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.49s
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.31s
+     Running `fuzz\target\x86_64-pc-windows-msvc\release\decapsulate.exe '-artifact_prefix=C:\Users\snehd\SealDrop\core\fuzz\artifacts\decapsulate\' -max_total_time=1800 -print_final_stats=1 'C:\Users\snehd\SealDrop\core\fuzz\corpus\decapsulate'`
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3348896952
+INFO: Loaded 1 modules   (4113 inline 8-bit counters): 4113 [00007FF766C47E88, 00007FF766C48E99), 
+INFO: Loaded 1 PC tables (4113 PCs): 4113 [00007FF766BF1E28,00007FF766C01F38), 
+INFO:        0 files found in C:\Users\snehd\SealDrop\core\fuzz\corpus\decapsulate
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+INFO: A corpus is not provided, starting from an empty corpus
+#2	INITED cov: 794 ft: 794 corp: 1/1b exec/s: 0 rss: 42Mb
+#24	NEW    cov: 805 ft: 1016 corp: 2/3b lim: 4 exec/s: 0 rss: 43Mb L: 2/2 MS: 2 ChangeBit-InsertByte-
+#128	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 4 exec/s: 64 rss: 44Mb
+#256	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 6 exec/s: 19 rss: 44Mb
+#512	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 8 exec/s: 17 rss: 46Mb
+#1024	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 11 exec/s: 19 rss: 48Mb
+#2048	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 21 exec/s: 18 rss: 54Mb
+#4096	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 43 exec/s: 25 rss: 65Mb
+#8192	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 80 exec/s: 32 rss: 87Mb
+#16384	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 163 exec/s: 41 rss: 130Mb
+#32768	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 325 exec/s: 43 rss: 216Mb
+#65536	pulse  cov: 805 ft: 1016 corp: 2/3b lim: 652 exec/s: 41 rss: 379Mb
+#76746	DONE   cov: 805 ft: 1016 corp: 2/3b lim: 760 exec/s: 42 rss: 379Mb
+Done 76746 runs in 1801 second(s)
+stat::number_of_executed_units: 76746
+stat::average_exec_per_sec:     42
+stat::new_units_added:          1
+stat::slowest_unit_time_sec:    0
+stat::peak_rss_mb:              379
+exit=0

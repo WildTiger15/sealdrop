@@ -1,0 +1,18 @@
+{
+ "N": "148",
+ "XW": "3/3",
+ "MLDSA": "145/145",
+ "E": "8,209,354",
+ "C": "0",
+ "FLIPS": "4786/4786",
+ "X": "0.48 ms",
+ "X_CL": "0.21 ms",
+ "S": "1.57 ms",
+ "V": "0.25 ms",
+ "S_CL": "0.033 ms",
+ "V_CL": "0.057 ms",
+ "Y": "183 MiB/s",
+ "Z": "1.08\u00d7",
+ "BROWSER": "37.6 ms / 25.1 ms",
+ "E2E": "11 checks passed, zero knowledge check passed"
+}

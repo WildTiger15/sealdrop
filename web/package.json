@@ -7,7 +7,9 @@
     "wasm": "cd ../wasm && wasm-pack build --release --target web --out-dir ../web/src/pkg",
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
-    "e2e": "node e2e/e2e.mjs"
+    "e2e": "node e2e/e2e.mjs",
+    "smoke": "node e2e/live-smoke.mjs",
+    "screenshots": "node e2e/screenshots.mjs"
   },
   "devDependencies": {
     "playwright": "1.64.1",
