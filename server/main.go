@@ -101,6 +101,10 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("POST /api/grants", api.requireUser(api.CreateGrant))
 	mux.HandleFunc("GET /api/grants", api.requireUser(api.ListGrants))
 	mux.HandleFunc("POST /oauth/token", api.Token)
+	mux.HandleFunc("GET /agent/v1/files", api.agentRoute("list", api.AgentList))
+	mux.HandleFunc("GET /agent/v1/files/{id}", api.agentRoute("download", api.AgentDownload))
+	mux.HandleFunc("POST /agent/v1/files", api.agentRoute("upload", api.AgentUpload))
+	mux.HandleFunc("POST /agent/v1/files/{id}/share", api.agentRoute("share", api.AgentShare))
 	mux.HandleFunc("GET /.well-known/jwks.json", api.JWKS)
 
 	mux.Handle("GET /", http.FileServer(http.Dir(static)))

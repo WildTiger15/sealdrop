@@ -142,6 +142,24 @@ func (s *Store) GrantsOf(username string) ([]*Grant, error) {
 	return out, nil
 }
 
+// AgentFileKey returns a granted file's sender and the file key wrapped to the agent.
+func (s *Store) AgentFileKey(grantID, fileID string) (sender string, wrapped []byte, err error) {
+	err = s.db.QueryRow(`SELECT f.sender, g.wrapped_key FROM grant_files g JOIN files f ON f.id = g.file_id
+		WHERE g.grant_id = ? AND g.file_id = ?`, grantID, fileID).Scan(&sender, &wrapped)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil, errNotFound
+	}
+	return sender, wrapped, err
+}
+
+// PutAgentFile stores a file an agent sealed. The sender is "agent:<id>"
+// (usernames can't contain ':'), and on_behalf_of names the delegating user.
+func (s *Store) PutAgentFile(id, agentID, recipient, onBehalfOf string, blob []byte) error {
+	_, err := s.db.Exec(`INSERT INTO files (id, sender, recipient, blob, created_at, on_behalf_of) VALUES (?, ?, ?, ?, ?, ?)`,
+		id, "agent:"+agentID, recipient, blob, time.Now().Unix(), onBehalfOf)
+	return err
+}
+
 // FileRecipient returns who a file was sent to (used to check a user may delegate it).
 func (s *Store) FileRecipient(id string) (string, error) {
 	var r string

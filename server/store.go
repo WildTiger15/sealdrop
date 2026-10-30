@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -58,6 +59,11 @@ func OpenStore(path string) (*Store, error) {
 		if _, err := db.Exec(ddl); err != nil {
 			return nil, err
 		}
+	}
+	// Milestone 7 migration: files uploaded by an agent record who it acted for.
+	if _, err := db.Exec(`ALTER TABLE files ADD COLUMN on_behalf_of TEXT`); err != nil &&
+		!strings.Contains(err.Error(), "duplicate column") {
+		return nil, err
 	}
 	return &Store{db: db}, nil
 }
