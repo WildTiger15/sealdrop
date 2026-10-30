@@ -4,6 +4,7 @@ package main
 // agent, until an expiry. Anything not written in a grant is denied.
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS grant_files (
 var allActions = []string{"list", "download", "upload", "share"}
 
 const (
+	agentKeyLen   = 4 + 1 + 1120 + 24 + 32 + 16 // SDAK blob from core/src/delegate.rs
 	maxGrantTTL   = 24 * time.Hour
 	maxGrantFiles = 100
 	maxShareWith  = 10
@@ -220,6 +222,17 @@ func (a *API) validateGrant(u *User, req *grantReq, now time.Time) (*Grant, map[
 		}
 		files = append(files, f.FileID)
 		wrapped[f.FileID] = f.WrappedKey
+	}
+	// Step 5: an agent can only read a file if the user's client wrapped that
+	// file's key to the agent. The server checks the shape; it can't open it.
+	if slices.Contains(actions, "download") || slices.Contains(actions, "share") {
+		for _, f := range files {
+			if k := wrapped[f]; len(k) != agentKeyLen || !bytes.HasPrefix(k, []byte("SDAK")) {
+				return nil, nil, "download and share need the file key wrapped to the agent for every file"
+			}
+		}
+	} else {
+		wrapped = map[string][]byte{} // list/upload only: store no keys at all
 	}
 	share := []string{}
 	for _, name := range req.ShareWith {

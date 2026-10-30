@@ -77,7 +77,7 @@ func (f *grantFixture) exchange(t *testing.T, grantToken, actorToken, scope stri
 
 func (f *grantFixture) grantFor(t *testing.T, agentID string, actions []string, ttl int) (*Grant, string) {
 	r := do(t, "POST", f.srv.URL+"/api/grants", f.alice, grantReq{
-		AgentID: agentID, Actions: actions, Files: []grantFileReq{{FileID: f.fileA}}, ShareWith: []string{"eve"}, TTLMinutes: ttl,
+		AgentID: agentID, Actions: actions, Files: []grantFileReq{{FileID: f.fileA, WrappedKey: fakeWrapped()}}, ShareWith: []string{"eve"}, TTLMinutes: ttl,
 	})
 	var out struct {
 		Grant      *Grant `json:"grant"`

@@ -107,3 +107,24 @@ pub fn unwrap_with_passphrase(passphrase: &str, blob: &[u8], username: &str) -> 
     let id = keywrap::unwrap(&key, blob, username.as_bytes()).map_err(js)?;
     Ok(id.to_bytes().to_vec())
 }
+
+/// Milestone 7: delegate one received file to an agent. Verifies the file,
+/// recovers its file key, and seals that key to the agent's X-Wing public key,
+/// bound to this file, its server id and the agent id.
+#[wasm_bindgen(js_name = wrapFileKeyForAgent)]
+pub fn wrap_file_key_for_agent(
+    sealed: &[u8],
+    recipient_secret: &[u8],
+    sender_sig_vk: &[u8],
+    agent_kem_pk: &[u8],
+    file_id: &str,
+    agent_id: &str,
+) -> Result<Vec<u8>, JsError> {
+    let me = SecretIdentity::from_bytes(recipient_secret).map_err(js)?;
+    let pk: [u8; xwing::PUBLIC_KEY_LEN] = agent_kem_pk
+        .try_into()
+        .map_err(|_| js(sealdrop_core::Error::InvalidKey))?;
+    let key = file::file_key(sealed, &me, sender_sig_vk).map_err(js)?;
+    let ctx = sealdrop_core::delegate::context(sealed, file_id, agent_id).map_err(js)?;
+    sealdrop_core::delegate::wrap_file_key(&key, &pk, &ctx).map_err(js)
+}

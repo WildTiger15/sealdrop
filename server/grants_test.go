@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+func fakeWrapped() []byte {
+	b := make([]byte, agentKeyLen)
+	copy(b, "SDAK")
+	return b
+}
+
 // grantFixture: alice and bob have keys, bob sent alice two files, alice has an agent.
 type grantFixture struct {
 	srv                *httptest.Server
@@ -47,7 +53,7 @@ func (f *grantFixture) grant(t *testing.T, tok string, req grantReq) (int, *Gran
 
 func TestGrantValidationDeniesByDefault(t *testing.T) {
 	f := newGrantFixture(t)
-	ok := grantReq{AgentID: f.agentID, Actions: []string{"list", "download"}, Files: []grantFileReq{{FileID: f.fileA}}, TTLMinutes: 30}
+	ok := grantReq{AgentID: f.agentID, Actions: []string{"list", "download"}, Files: []grantFileReq{{FileID: f.fileA, WrappedKey: fakeWrapped()}}, TTLMinutes: 30}
 	cases := map[string]func(g *grantReq){
 		"unknown agent":            func(g *grantReq) { g.AgentID = "agt_nope" },
 		"no actions":               func(g *grantReq) { g.Actions = nil },
@@ -58,6 +64,8 @@ func TestGrantValidationDeniesByDefault(t *testing.T) {
 		"nonexistent file":         func(g *grantReq) { g.Files = []grantFileReq{{FileID: "nope"}} },
 		"share without recipients": func(g *grantReq) { g.Actions = []string{"share"} },
 		"share to unknown user":    func(g *grantReq) { g.Actions = []string{"share"}; g.ShareWith = []string{"mallory"} },
+		"download without key":     func(g *grantReq) { g.Files = []grantFileReq{{FileID: f.fileA}} },
+		"download with bad key":    func(g *grantReq) { g.Files = []grantFileReq{{FileID: f.fileA, WrappedKey: []byte("SDAKshort")}} },
 	}
 	for name, mutate := range cases {
 		req := ok

@@ -52,6 +52,40 @@
         <ul id="file-list"></ul>
       </section>
 
+      <section id="agents" hidden>
+        <h2>AI agents</h2>
+        <p>An agent has its own keys. Register it with the public bundle it prints
+          (<code>python -m sealdrop_agent init</code>); its private keys never leave it.</p>
+        <label>Agent public bundle (JSON) <textarea id="agent-bundle" rows="3"></textarea></label>
+        <button id="agent-register">Register agent</button>
+        <ul id="agent-list"></ul>
+      </section>
+
+      <section id="grants" hidden>
+        <h2>Grant an agent access</h2>
+        <p>Deny by default: the agent gets exactly these files and actions, until the expiry.
+          File keys are wrapped to the agent's key in this browser.</p>
+        <label>Agent <select id="grant-agent"></select></label>
+        <fieldset id="grant-files"><legend>Files (received by you)</legend></fieldset>
+        <fieldset id="grant-actions"><legend>Actions</legend>
+          <label class="inline"><input type="checkbox" value="list" checked /> list</label>
+          <label class="inline"><input type="checkbox" value="download" checked /> download</label>
+          <label class="inline"><input type="checkbox" value="upload" /> upload (to you)</label>
+          <label class="inline"><input type="checkbox" value="share" /> share</label>
+        </fieldset>
+        <label>May share with (usernames, comma separated) <input id="grant-share" placeholder="bob" /></label>
+        <label>Expires in (minutes, max 1440) <input id="grant-ttl" type="number" value="60" min="1" max="1440" /></label>
+        <button id="grant-go">Create grant</button>
+        <div id="grant-token-box" hidden>
+          <p>Give this grant token to the agent. It is useless without the agent's own private key,
+            and stops working when the grant expires or is revoked.</p>
+          <textarea id="grant-token" rows="3" readonly></textarea>
+        </div>
+        <h3>Your grants</h3>
+        <ul id="grant-list"></ul>
+        <p><a href="/audit.html">Audit log →</a></p>
+      </section>
+
       <section id="local-demo">
         <h2>Local demo (no server)</h2>
         <p>Makes two throwaway identities in this tab, encrypts a file from Alice to Bob, and decrypts it

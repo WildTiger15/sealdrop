@@ -124,24 +124,57 @@ pub fn peek_header(sealed: &[u8]) -> Result<HeaderInfo, Error> {
 /// Verify the sender's signature, then decrypt. Fails closed: no plaintext is
 /// returned unless the signature and every chunk's tag are valid.
 pub fn open(sealed: &[u8], recipient: &SecretIdentity, sender_sig_vk: &[u8]) -> Result<Vec<u8>, Error> {
-    let (header, body, sig) = split(sealed)?;
-    let info = parse_header(header)?;
+    let key = file_key(sealed, recipient, sender_sig_vk)?;
+    decrypt_verified(sealed, &key)
+}
 
-    // 1. Signature first: is this really from the claimed sender, unmodified?
-    if info.sender_fingerprint != fingerprint(sender_sig_vk) {
+/// Verify the signature, then recover this file's 32 byte file key with the
+/// recipient's X-Wing key. Used to delegate one file to an agent: the key
+/// opens this file only, and the recipient's private keys stay private.
+pub fn file_key(
+    sealed: &[u8],
+    recipient: &SecretIdentity,
+    sender_sig_vk: &[u8],
+) -> Result<Zeroizing<[u8; 32]>, Error> {
+    let (header, _, _) = verify_signature(sealed, sender_sig_vk)?;
+    // Only now touch secret keys.
+    let kem_ct: &[u8; xwing::CIPHERTEXT_LEN] =
+        header[74..74 + xwing::CIPHERTEXT_LEN].try_into().map_err(|_| Error::InvalidFormat)?;
+    let ss = xwing::decapsulate(kem_ct, &recipient.kem);
+    derive_file_key(ss.as_bytes(), &sha3(header))
+}
+
+/// Verify the signature, then decrypt with a file key obtained some other way
+/// (an agent unwraps it with [`crate::delegate::unwrap_file_key`]).
+pub fn open_with_file_key(sealed: &[u8], key: &[u8; 32], sender_sig_vk: &[u8]) -> Result<Vec<u8>, Error> {
+    verify_signature(sealed, sender_sig_vk)?;
+    decrypt_verified(sealed, key)
+}
+
+/// SHA3-256 of the header: binds a delegated file key to this exact file.
+pub fn header_hash(sealed: &[u8]) -> Result<[u8; 32], Error> {
+    let (header, _, _) = split(sealed)?;
+    Ok(sha3(header))
+}
+
+/// Step 1 of every open: parse the header, check the sender fingerprint, verify ML-DSA.
+fn verify_signature<'a>(sealed: &'a [u8], sender_sig_vk: &[u8]) -> Result<Parts<'a>, Error> {
+    let (header, body, sig) = split(sealed)?;
+    parse_header(header)?;
+    if header[10..42] != fingerprint(sender_sig_vk) {
         return Err(Error::BadSignature);
     }
     sign::verify(sender_sig_vk, &signed_message(header, body), SIGNATURE_CONTEXT, sig)?;
+    Ok((header, body, sig))
+}
 
-    // 2. Only now touch secret keys.
-    let kem_ct: &[u8; xwing::CIPHERTEXT_LEN] =
-        header[74..74 + xwing::CIPHERTEXT_LEN].try_into().map_err(|_| Error::InvalidFormat)?;
+/// Step 2: decrypt the chunks. Callers must have verified the signature.
+fn decrypt_verified(sealed: &[u8], key: &[u8; 32]) -> Result<Vec<u8>, Error> {
+    let (header, body, _) = split(sealed)?;
+    let info = parse_header(header)?;
     let nonce_prefix: &[u8; NONCE_PREFIX_LEN] =
         header[74 + xwing::CIPHERTEXT_LEN..].try_into().map_err(|_| Error::InvalidFormat)?;
-    let ss = xwing::decapsulate(kem_ct, &recipient.kem);
-    let header_hash = sha3(header);
-    let key = derive_file_key(ss.as_bytes(), &header_hash)?;
-    decrypt_body(&key, nonce_prefix, &header_hash, body, info.chunk_size)
+    decrypt_body(key, nonce_prefix, &sha3(header), body, info.chunk_size)
 }
 
 /// (header, body, signature)

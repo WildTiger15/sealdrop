@@ -50,11 +50,13 @@ function showSignedIn(protection: string) {
   $("signed-in").hidden = false;
   $("send").hidden = false;
   $("inbox").hidden = false;
+  $("agents").hidden = false;
+  $("grants").hidden = false;
   $("passphrase-box").hidden = true;
   $("me").textContent = username;
   $("key-protection").textContent = protection;
   $("my-fp").textContent = shortFp(sd.fingerprint(sd.publicSigKey(secret!)));
-  refresh();
+  refresh().then(refreshAgents);
 }
 
 // Ask the user for a passphrase (fallback when PRF is unavailable).
@@ -185,6 +187,7 @@ async function refresh() {
     const li = document.createElement("li");
     if (f.recipient === username) {
       li.textContent = `from ${f.sender} · ${f.size} bytes`;
+      receivedFiles.set(f.id, f.sender);
       const btn = document.createElement("button");
       btn.textContent = "Decrypt";
       btn.dataset.fileId = f.id;
@@ -200,8 +203,7 @@ async function refresh() {
 async function receive(id: string, sender: string) {
   if (!secret) return;
   const sealed = new Uint8Array(await (await fetch(`/api/files/${id}`)).arrayBuffer());
-  const keys = await api(`/api/users/${encodeURIComponent(sender)}/keys`);
-  const svk = b64.dec(keys.sig_vk);
+  const svk = await senderSigKey(sender);
   const t0 = performance.now();
   const pt = sd.open(sealed, secret, svk); // verifies the ML-DSA signature first
   const ms = performance.now() - t0;
@@ -214,6 +216,107 @@ async function receive(id: string, sender: string) {
 }
 
 $("refresh").onclick = () => busy($("refresh") as HTMLButtonElement, refresh);
+
+// Files can come from users or from agents ("agent:<id>", acting for someone).
+async function senderSigKey(sender: string): Promise<Uint8Array> {
+  const path = sender.startsWith("agent:")
+    ? `/api/agents/${encodeURIComponent(sender.slice(6))}/keys`
+    : `/api/users/${encodeURIComponent(sender)}/keys`;
+  return b64.dec((await api(path)).sig_vk);
+}
+
+// ---- Agents and grants (Milestone 7) ----
+const receivedFiles = new Map<string, string>(); // file id -> sender
+
+async function refreshAgents() {
+  const agents: Array<{ id: string; name: string; jkt: string }> = await api("/api/agents");
+  const list = $("agent-list");
+  const select = $<HTMLSelectElement>("grant-agent");
+  list.replaceChildren();
+  select.replaceChildren();
+  for (const a of agents) {
+    const li = document.createElement("li");
+    li.textContent = `${a.name} · ${a.id}`;
+    list.append(li);
+    select.append(new Option(`${a.name} (${a.id})`, a.id));
+  }
+  const box = $("grant-files");
+  box.querySelectorAll("label").forEach((l) => l.remove());
+  for (const [id, sender] of receivedFiles) {
+    const label = document.createElement("label");
+    label.className = "inline";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = id;
+    label.append(cb, ` ${id.slice(0, 8)} from ${sender}`);
+    box.append(label);
+  }
+  await refreshGrants();
+}
+
+type GrantView = { id: string; agent_id: string; actions: string[]; file_ids: string[]; expires_at: number; revoked_at: number | null };
+
+async function refreshGrants() {
+  const grants: GrantView[] = await api("/api/grants");
+  const ul = $("grant-list");
+  ul.replaceChildren();
+  for (const g of grants) {
+    const li = document.createElement("li");
+    const state = g.revoked_at ? "revoked"
+      : Date.now() / 1000 >= g.expires_at ? "expired"
+      : `until ${new Date(g.expires_at * 1000).toLocaleTimeString()}`;
+    li.textContent = `${g.agent_id}: ${g.actions.join(", ")} on ${g.file_ids.length} file(s) · ${state}`;
+    li.dataset.grantId = g.id;
+    ul.append(li);
+  }
+}
+
+$("agent-register").onclick = () =>
+  busy($("agent-register") as HTMLButtonElement, async () => {
+    const bundle = JSON.parse($<HTMLTextAreaElement>("agent-bundle").value);
+    const ag = await api("/api/agents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: bundle.name, kem_pk: bundle.kem_pk, sig_vk: bundle.sig_vk, auth_key: bundle.auth_key }),
+    });
+    log(`Registered agent "${ag.name}" as ${ag.id}. Only its public keys were sent.`);
+    $<HTMLTextAreaElement>("agent-bundle").value = "";
+    await refreshAgents();
+  });
+
+$("grant-go").onclick = () =>
+  busy($("grant-go") as HTMLButtonElement, async () => {
+    if (!secret) return;
+    const agentId = $<HTMLSelectElement>("grant-agent").value;
+    const actions = [...document.querySelectorAll<HTMLInputElement>("#grant-actions input:checked")].map((c) => c.value);
+    const fileIds = [...document.querySelectorAll<HTMLInputElement>("#grant-files input:checked")].map((c) => c.value);
+    const shareWith = $<HTMLInputElement>("grant-share").value.split(",").map((s) => s.trim()).filter(Boolean);
+    const agentKeys = await api(`/api/agents/${encodeURIComponent(agentId)}/keys`);
+    const agentPk = b64.dec(agentKeys.kem_pk);
+    const needKeys = actions.includes("download") || actions.includes("share");
+    const files = [];
+    for (const id of fileIds) {
+      let wrapped: string | undefined;
+      if (needKeys) {
+        // Verify the file, recover its key, and seal it to the agent, all in Rust/WASM.
+        const sealed = new Uint8Array(await (await fetch(`/api/files/${id}`)).arrayBuffer());
+        const svk = await senderSigKey(receivedFiles.get(id)!);
+        wrapped = b64.enc(sd.wrapFileKeyForAgent(sealed, secret, svk, agentPk, id, agentId));
+      }
+      files.push({ file_id: id, wrapped_key: wrapped });
+    }
+    const res = await api("/api/grants", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agent_id: agentId, actions, files, share_with: shareWith,
+        ttl_minutes: Number($<HTMLInputElement>("grant-ttl").value) }),
+    });
+    $("grant-token-box").hidden = false;
+    $<HTMLTextAreaElement>("grant-token").value = res.grant_token;
+    log(`Granted ${agentKeys.name}: ${actions.join(", ")} on ${files.length} file(s)` +
+      (needKeys ? ", file keys wrapped to the agent in this browser." : "."));
+    await refreshGrants();
+  });
 
 // ---- Local demo (Milestone 4) ----
 $("demo-go").onclick = () =>
