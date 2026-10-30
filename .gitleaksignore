@@ -1,4 +1,6 @@
 # False positive: the algorithm name "XChaCha20-Poly1305" in PLAN.md matched generic-api-key.
 a31271358494e6dc32a77f7f915a8b418e0af953:PLAN.md:generic-api-key:71
-# False positive: a Python type annotation ("auth_key: Ed25519PrivateKey"), not a key.
+# False positive: a Python type annotation on the auth key field in identity.py, not a key value.
 ce757984ec2672fad5e75a8fa992a32d3461ef98:mcp/sealdrop_agent/identity.py:generic-api-key:37
+# False positive: the previous version of this file quoted that annotation in a comment.
+b41788d103c3340ef23cf3999db5edaf1dfdfdbc:.gitleaksignore:generic-api-key:3
