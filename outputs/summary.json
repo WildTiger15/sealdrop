@@ -13,6 +13,12 @@
  "V_CL": "0.057 ms",
  "Y": "183 MiB/s",
  "Z": "1.08\u00d7",
- "BROWSER": "37.6 ms / 25.1 ms",
- "E2E": "11 checks passed, zero knowledge check passed"
+ "BROWSER": "44.0 ms / 37.6 ms",
+ "E2E": "11 checks passed, zero knowledge check passed",
+ "ATT_TRIED": "27",
+ "ATT_BLOCKED": "27",
+ "DECIDE_NS": "143",
+ "DECIDE_DENY_NS": "208",
+ "AGENT_REQ_MS": "5.5 ms",
+ "AGENT_RUN_STATUS": "the real agent run with a prompt injection is not run yet, so it isn't counted"
 }

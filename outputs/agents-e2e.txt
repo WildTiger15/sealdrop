@@ -1,0 +1,63 @@
+Setup: users, files, agents, grants (all through the web UI)
+  ok  alice created 2 grants through the UI (file keys wrapped in her browser)
+
+Stage: mcp
+  ok  tools exposed: ['download_file', 'list_files', 'share_file', 'upload_file']
+  ok  list_files shows the 2 granted files
+  ok  list_files does not show the ungranted file
+  ok  download_file decrypts a granted file
+  ok  download_file of an ungranted file is refused by the server
+  ok  upload_file sends a new file to alice, signed by the agent
+  ok  share_file to carol (allowed by the grant) works
+  ok  share_file to mallory is refused
+  ok  no credential in any of 6 tool results (keys, grant token, JWTs)
+MCP E2E PASSED
+
+Stage: attacks
+Attack 1: expired token replay
+  (control: same token before expiry -> 200)
+  waiting 61 s for the 1 minute grant and its token to expire ...
+  BLOCKED  [expired token replay] reuse an expired access token with a fresh DPoP proof -> 401 authentication failed: access token invalid: token has invalid claims: token is expired
+  BLOCKED  [expired token replay] replay an expired token together with its old DPoP proof -> 401 authentication failed: access token invalid: token has invalid claims: token is expired
+  BLOCKED  [expired token replay] refresh (re-exchange) after the grant expired -> 400 grant token rejected: token has invalid claims: token is expired
+  BLOCKED  [expired token replay] replay a captured DPoP proof (one-time jti) -> 401 authentication failed: DPoP proof invalid: DPoP proof replayed
+Attack 2: an action that was not granted
+  BLOCKED  [action not granted] agent B uploads (grant: list, download) -> 403 action not in token scope
+  BLOCKED  [action not granted] agent B shares a file -> 403 action not in token scope
+  BLOCKED  [action not granted] agent B downloads a file outside its grant -> 403 file not in grant
+  BLOCKED  [action not granted] agent A downloads the never-granted secret file -> 403 file not in grant
+  BLOCKED  [action not granted] agent B asks the token endpoint for an extra scope -> 400 scope upload is not in the grant
+  BLOCKED  [action not granted] agent A shares to a recipient the grant does not allow -> 403 share recipient not allowed by grant
+  BLOCKED  [action not granted] agent A tries an action that does not exist (delete) -> 405 Method Not Allowed
+
+Attack 3: agent A using agent B's token
+  BLOCKED  [agent A uses B's token] B's access token with A's own DPoP proof -> 401 authentication failed: DPoP proof invalid: DPoP key does not match the token's cnf.jkt
+  BLOCKED  [agent A uses B's token] B's access token with no DPoP proof (bearer use) -> 401 authentication failed: missing DPoP proof
+  BLOCKED  [agent A uses B's token] B's token with a stolen B proof made for another URL -> 401 authentication failed: DPoP proof invalid: DPoP proof is for a different request
+  BLOCKED  [agent A uses B's token] B's grant token exchanged with A's own actor assertion -> 400 this grant is for a different agent
+  BLOCKED  [agent A uses B's token] actor assertion claiming to be B, signed with A's key -> 401 actor token rejected: token signature is invalid: ed25519: verification error
+Attack 4: forged or tampered tokens
+  BLOCKED  [forged or tampered token] access token payload edited: scope widened to upload share -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+  BLOCKED  [forged or tampered token] access token payload edited: acting-for user changed to bob -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+  BLOCKED  [forged or tampered token] access token payload edited: expiry pushed a day ahead -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+  BLOCKED  [forged or tampered token] access token payload edited: cnf.jkt swapped to attacker key -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+  BLOCKED  [forged or tampered token] access token signed by an attacker's own key -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+  BLOCKED  [forged or tampered token] alg "none" token -> 401 authentication failed: access token invalid: token signature is invalid: signing method none is invalid
+  BLOCKED  [forged or tampered token] HS256 token keyed with the server's public key (alg confusion) -> 401 authentication failed: access token invalid: token signature is invalid: signing method HS256 is invalid
+  BLOCKED  [forged or tampered token] self-signed grant token naming another grant -> 400 grant token rejected: token signature is invalid: ed25519: verification error
+Attack 5: access after revocation
+  (control: B downloads its granted file before revocation -> 200)
+  alice revokes agent B's grant -> 204
+  BLOCKED  [access after revocation] download with a token issued before revocation -> 403 grant revoked
+  BLOCKED  [access after revocation] list with a token issued before revocation -> 403 grant revoked
+  BLOCKED  [access after revocation] get a new token (refresh) after revocation -> 400 grant revoked
+
+ATTACKS: 27/27 attempts blocked across 5 attack classes
+
+Users' side: files the agent created verify and decrypt in the browser
+  ok  alice decrypts the agent's upload
+  ok  carol decrypts the file the agent shared
+  ok  mallory received nothing
+
+ZERO KNOWLEDGE CHECK PASSED: no plaintext found (3 needles searched), all blobs are ciphertext
+AGENT E2E PASSED

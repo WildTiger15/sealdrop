@@ -17,10 +17,11 @@
 5. [Run it locally](#run-it-locally)
 6. [Examples](#examples): Rust API, browser (WASM) API, HTTP API
 7. [Testing](#testing): known answer tests, tamper tests, end to end, zero knowledge check, fuzzing, benchmarks
-8. [Deploying](#deploying)
-9. [Repository layout](#repository-layout)
-10. [Security model and limitations](#security-model-and-limitations)
-11. [Documentation](#documentation)
+8. [AI agents](#ai-agents-delegated-scoped-revocable-access): delegated, scoped, revocable access
+9. [Deploying](#deploying)
+10. [Repository layout](#repository-layout)
+11. [Security model and limitations](#security-model-and-limitations)
+12. [Documentation](#documentation)
 
 ## What it does
 
@@ -240,6 +241,8 @@ Every other endpoint needs the passkey-backed session cookie (`HttpOnly`, `SameS
 | Rust core (KATs, round trips, tampering) | `cargo test -p sealdrop-core -- --nocapture` | the crypto is correct on official inputs, and every failure case fails |
 | Go server | `cd server && go test ./...` | auth required, keys set once, access control, input validation |
 | End to end | `cd web && npm run build && npm run e2e` | real browser + real server + virtual passkeys, plus the zero knowledge dump |
+| Agents (M7) | `cd web && npm run build && node e2e/agents.mjs mcp attacks agent-run` | MCP tools, 27 attack attempts, real agent run with prompt injection, zero knowledge dump |
+| Policy timing | `cd server && SEALDROP_TIMING_OUT=../outputs/policy-timing.json go test -run TestPolicyTiming` | median `Decide()` time |
 | Live smoke test | `cd web && npm run smoke` (or `npm run smoke -- <url>`) | the deployed site: two new users, passkeys with PRF, send and decrypt ([output](outputs/live-smoke.txt)) |
 | Fuzzing | `cd core && cargo +nightly fuzz run decrypt` (also `decapsulate`, `verify`) | parsers never crash on hostile input |
 | Benchmarks | `cargo bench -p sealdrop-core` | the numbers above |
@@ -304,6 +307,87 @@ cargo bench -p sealdrop-core
 
 This compares X-Wing with plain X25519, ML-DSA-65 with Ed25519, and SealDrop's full seal with the same file format built from X25519 + Ed25519. Laptop numbers move around between runs, so treat them as rough. The full tables are in [`outputs/results.md`](outputs/results.md).
 
+## AI agents: delegated, scoped, revocable access
+
+AI agents get **their own identity**. You can give one access to **specific files, specific actions, until a time you choose**, and take it back at any moment. Every request is recorded as *which agent acted, for whom*. The agent never gets your keys or a shared long-lived credential, and the server still never sees plaintext. The full design is in [docs/AGENTS.md](docs/AGENTS.md).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Alice's browser (WASM)
+    participant S as Server
+    participant M as Agent (MCP server + Rust CLI)
+    participant L as AI model
+    M->>M: init: own X-Wing, ML-DSA, Ed25519 keys (private, never sent)
+    U->>S: register agent (public keys only)
+    Note over U: per granted file: verify, recover file key,<br/>wrap it to the agent's X-Wing key
+    U->>S: grant: files, actions, share list, expiry + wrapped keys
+    S-->>U: grant token (useless without the agent's private key)
+    U-->>M: grant token
+    M->>S: token exchange (RFC 8693): grant token + actor JWT signed by agent key
+    S-->>M: 5 min access token: sub=alice, act=agent, scope, cnf.jkt
+    L->>M: tool call, e.g. download_file(id)
+    M->>S: GET /agent/v1/files/id  + DPoP proof (agent key)
+    Note over S: Decide(): grant valid? action granted? file in grant? → audit row
+    S-->>M: sealed file + key wrapped to this agent
+    Note over M: unwrap key, verify signature, decrypt (Rust CLI)
+    M-->>L: file text (never keys or tokens)
+```
+
+| Piece | What it does |
+|---|---|
+| **Agent identity** | `python -m sealdrop_agent init` generates the agent's keys locally (X-Wing + ML-DSA-65 via the Rust core, Ed25519 for auth). You register only the public bundle. |
+| **Grants** | Deny by default: exact file ids (only files sent to you), actions from `list · download · upload · share`, allowed share recipients, expiry of 1 min to 24 h. |
+| **Tokens** | OAuth 2.0 **token exchange** (RFC 8693) issues 5-minute JWTs with the **`act` claim** (agent acting for user), bound to the agent's key with **DPoP** (RFC 9449). Refreshing only works while the grant is valid. All signing uses `golang-jwt` / PyJWT. |
+| **One policy check** | `Decide()` in [`server/policy.go`](server/policy.go): every agent request passes through it, after token and DPoP checks and with the grant reloaded fresh. |
+| **Key wrapping** | For granted files only, your browser wraps each file key to the agent's X-Wing key, bound to that file and that agent ([`core/src/delegate.rs`](core/src/delegate.rs)). |
+| **Revocation** | One click stops new tokens, kills existing ones on their next request, and deletes the agent's wrapped keys. |
+| **Audit log** | Agent, user acted for, action, file, decision and reason for every request and token exchange, at `/audit.html`. Fails closed. |
+| **MCP server** | [`mcp/`](mcp/): official MCP Python SDK with tools `list_files`, `download_file`, `upload_file`, `share_file`. Crypto runs in a Rust CLI over stdin/stdout. Keys and tokens never appear in tool results. |
+| **Observability** | JSON logs with request ids, Prometheus `/metrics`, `/healthz`. |
+
+### Attack results
+
+Every attack ran against a real server, with real agents and grants created through the web UI ([`web/e2e/agents.mjs`](web/e2e/agents.mjs), [`mcp/tests/attacks.py`](mcp/tests/attacks.py)):
+
+**{ATT_BLOCKED} of {ATT_TRIED} attack attempts blocked**: expired token and DPoP proof replay, actions and files outside the grant, agent A using agent B's tokens, forged and tampered tokens (`alg: none`, HS256 key confusion, edited claims, attacker-signed), and access after revocation. Note: {AGENT_RUN_STATUS}.
+
+```
+{ATTACK_LINES}
+```
+
+**Policy check time:** a median of **{DECIDE_NS} ns** per `Decide()` call for an allowed request, and **{DECIDE_DENY_NS} ns** for a denial that runs every check. A whole agent request (DPoP signing, HTTP, token verification, grant load, policy, audit write) takes a median of **{AGENT_REQ_MS}** on localhost. Details are in [`outputs/results.md`](outputs/results.md).
+
+### Use it with an MCP client
+
+```bash
+cd mcp && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+```
+
+```bash
+python -m sealdrop_agent init --name "Research bot"
+```
+
+Paste the printed public bundle into **AI agents** on the site, and note the agent id it assigns. Then:
+
+```bash
+python -m sealdrop_agent set-agent-id agt_...
+```
+
+Create a grant in **Grant an agent access**, save the grant token to a file, and load it from stdin so it never lands in shell history:
+
+```bash
+python -m sealdrop_agent set-grant < grant-token.txt
+```
+
+MCP client configuration (Claude Code, Claude Desktop, …):
+
+```json
+{ "mcpServers": { "sealdrop": {
+    "command": "<repo>/mcp/.venv/Scripts/python", "args": ["-m", "sealdrop_agent", "serve"],
+    "env": { "PYTHONPATH": "<repo>/mcp", "SEALDROP_URL": "https://sealdrop.onrender.com" } } } }
+```
+
 ## Deploying
 
 The repository includes a multi-stage [`Dockerfile`](Dockerfile): Rust → WebAssembly, Vite → static files, Go → a static binary, all in a distroless non-root image. On **Render**, create a *Web Service* from the repo with runtime **Docker**. The server picks up Render's `PORT` and `RENDER_EXTERNAL_URL` by itself, and passkeys are bound to that hostname. Two notes for the free plan:
@@ -324,7 +408,10 @@ core/            Rust crypto core
   tests/           official vectors + tamper tests      benches/  criterion
   examples/        quickstart.rs                        fuzz/     cargo-fuzz targets
 wasm/            wasm-bindgen wrapper for the browser
-server/          Go server: passkeys (go-webauthn), SQLite, cmd/dbdump
+server/          Go server: passkeys (go-webauthn), SQLite, cmd/dbdump,
+                 agents, grants, OAuth token exchange, policy.go, audit, metrics
+cli/             sealdrop-agent: Rust CLI the agent uses for crypto
+mcp/             Python MCP server for AI agents (official MCP SDK); tests/ attacks, agent run
 web/             TypeScript + Vite client; e2e/ Playwright tests and screenshots
 docs/            DESIGN, THREAT_MODEL, CRYPTO_REVIEW, primers, images
 outputs/         raw results: tests, benchmarks, fuzzing, e2e, results.md
@@ -355,7 +442,8 @@ The full analysis is in [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md), and the se
 * [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md): assets, attackers, what is and isn't protected
 * [docs/CRYPTO_REVIEW.md](docs/CRYPTO_REVIEW.md): the hygiene checklist applied to this code, plus what to fix next
 * [docs/PRIMER.md](docs/PRIMER.md): KEMs, hybrid encryption, AEAD, HKDF, constant time, in plain language
-* [docs/PRIMER_AGENTS.md](docs/PRIMER_AGENTS.md): authentication vs authorization, token exchange, JWTs (for the upcoming Milestone 7)
+* [docs/AGENTS.md](docs/AGENTS.md): delegated access for AI agents (identities, grants, token exchange, DPoP, policy, audit, MCP)
+* [docs/PRIMER_AGENTS.md](docs/PRIMER_AGENTS.md): authentication vs authorization, token exchange, JWTs, least privilege
 * [PLAN.md](PLAN.md): the milestone plan
 
 ## License

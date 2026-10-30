@@ -14,7 +14,7 @@ Laptop numbers vary between runs (power management, background load); treat them
 | NIST ACVP ML-DSA-65 sigVer (36 of them must-reject) | 45/45 |
 | **Official vectors total** | **148/148** |
 | One bit flipped, in every byte position of a sealed file: rejected | 4786/4786 |
-| Rust core tests | 31 passed, 0 failed |
+| Rust core tests | 38 passed, 0 failed |
 | End to end browser test (passkeys, PRF, sharing, fallback) | 11 checks passed, PASSED |
 | Zero knowledge database dump | ZERO KNOWLEDGE CHECK PASSED: no plaintext found (3 needles searched), all blobs are ciphertext |
 
@@ -55,7 +55,7 @@ ciphertext (the signed body hash), not post quantum cost. The PQ-only cost is th
 
 ### In the browser (WebAssembly)
 
-Microsoft Edge 156.0.4314.50 (headless, Playwright), 1 MiB file, median of 10: seal 37.6 ms (26.6 MiB/s), open 25.1 ms (39.8 MiB/s). WASM build size: see `web/dist/assets/*.wasm`.
+Microsoft Edge 156.0.4314.50 (headless, Playwright), 1 MiB file, median of 10: seal 44.0 ms (22.7 MiB/s), open 37.6 ms (26.6 MiB/s). WASM build size: see `web/dist/assets/*.wasm`.
 
 ## Sizes (bytes)
 
@@ -80,3 +80,39 @@ Measured in the e2e run: an 11800 byte file became 16338 bytes (4538 bytes overh
 * S (ML-DSA-65 sign) = **1.57 ms**
 * Y (file encryption, 16 MiB, full seal incl. signature) = **183 MiB/s**
 * Z (SealDrop seal vs same-format classic X25519 + Ed25519 seal, 16 MiB) = **1.08×**
+
+## Milestone 7: delegated access for AI agents
+
+From `node web/e2e/agents.mjs mcp attacks agent-run` ([agents-e2e.txt](agents-e2e.txt), [attacks.json](attacks.json)) and
+`SEALDROP_TIMING_OUT=... go test -run TestPolicyTiming` ([policy-timing.json](policy-timing.json)).
+
+### Attacks
+
+| Attack class | Attempts | Blocked |
+|---|---|---|
+| expired token replay | 4 | 4 |
+| action not granted | 7 | 7 |
+| agent A uses B's token | 5 | 5 |
+| forged or tampered token | 8 | 8 |
+| access after revocation | 3 | 3 |
+| **total** | **27** | **27** |
+
+The real agent run with a prompt injection has **not been run yet** (the `claude` CLI on the test machine
+needed a fresh sign in), so it is not counted above.
+
+Every attempt, with the server's status code and reason, is listed in `attacks.json`. One attempt
+(an action that doesn't exist, `DELETE`) is refused by routing (405) rather than by the policy check.
+
+### Policy check time
+
+| Measurement | Median | p99 |
+|---|---|---|
+| `Decide()`, allowed download | 143 ns | 406 ns |
+| `Decide()`, denial after every check | 208 ns | 311 ns |
+| Whole agent request on localhost (300 requests) | 5.5 ms | |
+
+`Decide()` is timed as 200 x 200000 calls (time.Now around 200000-call batches (several ms each, far above clock resolution), median of batch means); go1.27.0, 12 CPUs.
+The whole request includes: client DPoP signing, HTTP on localhost, token + DPoP verification, grant load, Decide, audit write, file read.
+
+MCP server end to end: 9 checks passed (passed); zero knowledge dump after the agent run: passed.
+

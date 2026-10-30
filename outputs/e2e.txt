@@ -4,7 +4,7 @@ SealDrop end to end test
   ok  bob: keys protected by passkey PRF
   ok  alice's passkey lives in her authenticator
 2. alice sends bob a file
-  10:30:24 PM  Sent "plan.txt" (11800 bytes) to bob: encrypted + signed in 21.8 ms, 4538 bytes overhead.
+  11:29:26 PM  Sent "plan.txt" (11800 bytes) to bob: encrypted + signed in 48.0 ms, 4538 bytes overhead.
 3. bob signs out, signs back in with his passkey, decrypts
   ok  bob's keys unwrapped with PRF after a fresh sign in
   ok  bob's decrypted file matches what alice sent
@@ -18,7 +18,7 @@ SealDrop end to end test
 6. Local demo in the browser: round trip and tamper rejection
   ok  WASM round trip OK, tampered copy rejected
 7. Browser benchmark (WASM, 1 MiB, median of 10)
-  seal 37.6 ms (26.6 MiB/s), open 25.1 ms (39.8 MiB/s)
+  seal 44.0 ms (22.7 MiB/s), open 37.6 ms (26.6 MiB/s)
 8. Zero knowledge check: dump the server database
 table users        4 rows
 table credentials  4 rows
@@ -26,12 +26,12 @@ table files        1 rows
 table sessions     4 rows
 
 users (what the server knows about each user):
-  alice        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000facf
-  bob          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000c447
-  eve          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570101000000000000000000000000000000006ae3
-  carol        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570102dccd820da0b5d6cebeb78d3fb0f8528b01f5
+  alice        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000164e
+  bob          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000abc3
+  eve          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570101000000000000000000000000000000002115
+  carol        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570102899cde1ebb70246bd4d4727dc2c1b79f1894
 
 files (sealed blobs):
-  9f92f4b1  alice -> bob  16338 bytes  magic="SDRP"  body entropy=7.989 bits/byte
+  d40a4b7f  alice -> bob  16338 bytes  magic="SDRP"  body entropy=7.987 bits/byte
 
 ZERO KNOWLEDGE CHECK PASSED: no plaintext found (3 needles searched), all blobs are ciphertext

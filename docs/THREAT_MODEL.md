@@ -41,3 +41,16 @@ Scope: SealDrop v1 (core, WASM client, Go server). Not audited.
 * **Denial of service / spam**: no rate limiting or quotas beyond a 64 MiB upload cap.
 * **Side channels inside JS engines / WASM**: constant-time Rust code compiled to WASM is *probably* still constant time, but JIT engines make no guarantee.
 * **Implementation bugs in young crates**: `ml-dsa 0.1.x` and `ml-kem 0.3.x` are unaudited. KATs show they are correct on the official inputs, not that they are side channel free.
+
+## AI agents (Milestone 7)
+
+Agents act only through grants. The full analysis is in [AGENTS.md](AGENTS.md#threats-specific-to-agents), and the measured attack results are in `outputs/results.md`.
+
+| Attacker | Protected? |
+|---|---|
+| **Hijacked agent / prompt injection** | Limited to its grant: exact files, actions, share recipients and expiry are enforced server side by `Decide()`, whatever the model asks for. **It can still misuse what the grant allows.** |
+| **Stolen agent access token** | Useless without the agent's Ed25519 key (DPoP, `cnf.jkt`), and lives at most 5 minutes |
+| **Stolen grant token** | Useless without the agent's key (`may_act` + signed actor assertion), dies with the grant |
+| **Malicious server** | Can refuse service or keep metadata, but still can't read files or unwrap agent file keys. It *could* mint tokens, but tokens only reach ciphertext the server already has |
+| **Revoked agent** | No new tokens, existing tokens stop at the next request, wrapped keys deleted. **What it already decrypted can't be taken back** |
+| **Compromised agent host** | Not protected: whoever controls it holds the agent's keys and grant tokens until revocation or expiry |

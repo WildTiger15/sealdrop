@@ -7,6 +7,7 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY core ./core
 COPY wasm ./wasm
+COPY cli ./cli
 RUN cd wasm && wasm-pack build --release --target web --out-dir /src/web/src/pkg
 
 # Stage 2: TypeScript client -> static files

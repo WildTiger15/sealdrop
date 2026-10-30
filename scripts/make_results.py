@@ -162,6 +162,55 @@ y = mibs(16777216, median_ns("file", "sealdrop_seal", 16777216))
 w(f"* Y (file encryption, 16 MiB, full seal incl. signature) = **{y:.0f} MiB/s**")
 w(f"* Z (SealDrop seal vs same-format classic X25519 + Ed25519 seal, 16 MiB) = **{ratios[16777216]:.2f}×**")
 
+# ---- Milestone 7: agents ----
+att = json.loads((OUT / "attacks.json").read_text(encoding="utf-8"))
+pt = json.loads((OUT / "policy-timing.json").read_text(encoding="utf-8"))
+agents_log = (OUT / "agents-e2e.txt").read_text(encoding="utf-8")
+runs = [r for r in att.get("agent_runs", []) if r.get("valid")]
+w("\n## Milestone 7: delegated access for AI agents\n")
+w("From `node web/e2e/agents.mjs mcp attacks agent-run` ([agents-e2e.txt](agents-e2e.txt), [attacks.json](attacks.json)) and")
+w("`SEALDROP_TIMING_OUT=... go test -run TestPolicyTiming` ([policy-timing.json](policy-timing.json)).\n")
+w("### Attacks\n")
+w("| Attack class | Attempts | Blocked |")
+w("|---|---|---|")
+classes = {}
+for a in att["attempts"]:
+    c = classes.setdefault(a["attack"], [0, 0])
+    c[0] += 1
+    c[1] += int(a["blocked"])
+for name, (tried, blk) in classes.items():
+    w(f"| {name} | {tried} | {blk} |")
+for r in runs:
+    w(f"| prompt injection, real agent run ({r['run']}) | 1 | {int(r['blocked'])} |")
+total_tried = att["tried"] + len(runs)
+total_blocked = att["blocked"] + sum(int(r["blocked"]) for r in runs)
+w(f"| **total** | **{total_tried}** | **{total_blocked}** |\n")
+if not runs:
+    w("The real agent run with a prompt injection has **not been run yet** (the `claude` CLI on the test machine")
+    w("needed a fresh sign in), so it is not counted above.\n")
+w("Every attempt, with the server's status code and reason, is listed in `attacks.json`. One attempt")
+w("(an action that doesn't exist, `DELETE`) is refused by routing (405) rather than by the policy check.\n")
+for r in runs:
+    w(f"**Agent run `{r['run']}`** (model `{r['model']}`, tools available: {len(r['tools_available'])}): "
+      f"{len(r['tool_calls'])} tool calls; the model attempted {r['model_attempted_out_of_grant']} out-of-grant actions; "
+      f"the server denied {r['server_denied_out_of_grant']} and allowed {r['server_allowed_out_of_grant']}; "
+      f"secret text reached the model: {r['secret_text_reached_model']}; a credential reached the model: "
+      f"{r['credential_reached_model']}.\n")
+w("### Policy check time\n")
+w(f"| Measurement | Median | p99 |")
+w("|---|---|---|")
+w(f"| `Decide()`, allowed download | {pt['decide_allow_median_ns']:.0f} ns | {pt['decide_allow_p99_ns']:.0f} ns |")
+w(f"| `Decide()`, denial after every check | {pt['decide_deny_median_ns']:.0f} ns | {pt['decide_deny_p99_ns']:.0f} ns |")
+w(f"| Whole agent request on localhost ({pt['agent_request_samples']} requests) | {pt['agent_request_median_us'] / 1000:.1f} ms | |")
+w(f"\n`Decide()` is timed as {pt['decide_batches_x_calls']} calls ({pt['decide_measured_with']}); {pt['go']}, {pt['cpus']} CPUs.")
+w(f"The whole request includes: {pt['agent_request_includes']}.\n")
+mcp_ok = len(re.findall(r"^  ok  ", agents_log.split("Stage: mcp")[-1].split("Stage:")[0], re.M)) if "Stage: mcp" in agents_log else 0
+w(f"MCP server end to end: {mcp_ok} checks passed ({'MCP E2E PASSED' in agents_log and 'passed' or 'see log'}); "
+  f"zero knowledge dump after the agent run: {'passed' if 'ZERO KNOWLEDGE CHECK PASSED' in agents_log else 'see log'}.\n")
+agent_summary = {"attacks_tried": total_tried, "attacks_blocked": total_blocked,
+                 "decide_median_ns": round(pt["decide_allow_median_ns"]), "decide_deny_median_ns": round(pt["decide_deny_median_ns"]),
+                 "agent_runs": len(runs)}
+
 extra = OUT / "results-extra.md"
 if extra.exists():
     w("\n" + extra.read_text(encoding="utf-8"))
@@ -189,6 +238,12 @@ summary = {
     "QUICKSTART": block((OUT / "example-quickstart.txt").read_text(encoding="utf-8").strip().splitlines()),
     "KAT_LINES": block(re.findall(r"(?:X-Wing official vectors|ML-DSA-65 ACVP \w+) passed: \d+/\d+", tests)),
     "E2E_LINES": block(l for l in e2e.strip().splitlines() if not l.startswith("  prefix")),
+    "ATT_TRIED": str(agent_summary["attacks_tried"]), "ATT_BLOCKED": str(agent_summary["attacks_blocked"]),
+    "DECIDE_NS": str(agent_summary["decide_median_ns"]), "DECIDE_DENY_NS": str(agent_summary["decide_deny_median_ns"]),
+    "AGENT_REQ_MS": f"{pt['agent_request_median_us'] / 1000:.1f} ms",
+    "AGENT_RUN_STATUS": (f"{len(runs)} real agent runs included" if runs else
+                         "the real agent run with a prompt injection is not run yet, so it isn't counted"),
+    "ATTACK_LINES": block(l.strip() for l in agents_log.splitlines() if "BLOCKED" in l or l.startswith("ATTACKS:")),
 }
 (OUT / "summary.json").write_text(json.dumps({k: v for k, v in summary.items() if "\n" not in v}, indent=1), encoding="utf-8")
 text = (ROOT / "scripts" / "README.template.md").read_text(encoding="utf-8")

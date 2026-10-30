@@ -71,6 +71,16 @@ No test was weakened. Excluded on purpose (SealDrop never uses them): HashML-DSA
 
 * `.gitignore` excludes databases, `.env`, `*.pem`/`*.key`, build output and `server/data/`. The secret scan result is in outputs/results.md.
 
+## 9. Agents (Milestone 7)
+
+* **No home-made token crypto.** Tokens are signed and verified by `golang-jwt/jwt/v5` (server/oauth.go) and PyJWT (mcp/sealdrop_agent/client.py). `jwt.WithValidMethods([]string{"EdDSA"})` pins the algorithm, so `alg: none` and HS256 key confusion fail (tested in mcp/tests/attacks.py).
+* **Every token is checked for** `typ`, issuer, audience, expiry and issued-at. Actor assertions and DPoP proofs have one-time `jti` values stored in `used_jti` until expiry.
+* **The only server secret is the token signing key.** It's an Ed25519 seed from `SEALDROP_TOKEN_KEY`, or a 0600 file. It can sign tokens but can't decrypt anything.
+* **Agent file keys are wrapped with the core library** (core/src/delegate.rs), and AEAD associated data binds each one to the file header hash, file id and agent id. Unwrapping uses `Zeroizing` buffers.
+* **The CLI takes secrets only on stdin** (cli/src/main.rs) and keeps the raw input in a `Zeroizing` buffer. Unknown commands exit before reading stdin.
+* **The MCP server keeps keys and tokens inside its process.** `AgentIdentity.__repr__` hides keys, and `_guard` redacts known secrets and JWT-shaped strings from every tool result (mcp/sealdrop_agent/server.py).
+* **The audit log fails closed.** An allowed action that can't be audited is refused (server/agentapi.go).
+
 ## Things I would fix next
 
 1. **Key authenticity**: pin contacts' fingerprints after first use and warn on change. Longer term, a key transparency log. Today a malicious server can substitute public keys.
@@ -81,3 +91,6 @@ No test was weakened. Excluded on purpose (SealDrop never uses them): HashML-DSA
 6. **Rate limiting** on register/login and quotas on uploads. The in-memory ceremony map also doesn't scale past one server process.
 7. **Key rotation and multi-device** (each passkey wraps the identity separately).
 8. **Constant-time evidence**: run a tool like `dudect` against decapsulation, at least natively.
+9. **Post-quantum tokens**: move grant tokens, access tokens and DPoP to ML-DSA once JOSE registers it and the libraries support it. Today the token layer is Ed25519.
+10. **Agent key protection**: the agent's state file is a 0600 JSON file. Keep it in an OS keychain or HSM instead, and support agent key rotation.
+11. **Store less**: prune `used_jti` in the background (today it's pruned on each insert), and cap audit log growth.

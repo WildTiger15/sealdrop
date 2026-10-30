@@ -17,10 +17,11 @@
 5. [Run it locally](#run-it-locally)
 6. [Examples](#examples): Rust API, browser (WASM) API, HTTP API
 7. [Testing](#testing): known answer tests, tamper tests, end to end, zero knowledge check, fuzzing, benchmarks
-8. [Deploying](#deploying)
-9. [Repository layout](#repository-layout)
-10. [Security model and limitations](#security-model-and-limitations)
-11. [Documentation](#documentation)
+8. [AI agents](#ai-agents-delegated-scoped-revocable-access): delegated, scoped, revocable access
+9. [Deploying](#deploying)
+10. [Repository layout](#repository-layout)
+11. [Security model and limitations](#security-model-and-limitations)
+12. [Documentation](#documentation)
 
 ## What it does
 
@@ -45,7 +46,7 @@ Every number comes from a real run. The raw outputs are in [`outputs/`](outputs/
 | X-Wing encapsulate + decapsulate | 0.48 ms (X25519 alone: 0.21 ms) |
 | ML-DSA-65 sign / verify | 1.57 ms / 0.25 ms (Ed25519: 0.033 ms / 0.057 ms) |
 | Encrypt + sign a 16 MiB file | 183 MiB/s · 1.08× the time of the same format using X25519 + Ed25519 |
-| In the browser (WASM), 1 MiB seal / open | 37.6 ms / 25.1 ms |
+| In the browser (WASM), 1 MiB seal / open | 44.0 ms / 37.6 ms |
 | Size overhead per file | 4522 bytes + 16 bytes per 64 KiB chunk |
 | End to end test (real browser, virtual passkeys) | 11 checks passed, zero knowledge check passed |
 
@@ -247,6 +248,8 @@ Every other endpoint needs the passkey-backed session cookie (`HttpOnly`, `SameS
 | Rust core (KATs, round trips, tampering) | `cargo test -p sealdrop-core -- --nocapture` | the crypto is correct on official inputs, and every failure case fails |
 | Go server | `cd server && go test ./...` | auth required, keys set once, access control, input validation |
 | End to end | `cd web && npm run build && npm run e2e` | real browser + real server + virtual passkeys, plus the zero knowledge dump |
+| Agents (M7) | `cd web && npm run build && node e2e/agents.mjs mcp attacks agent-run` | MCP tools, 27 attack attempts, real agent run with prompt injection, zero knowledge dump |
+| Policy timing | `cd server && SEALDROP_TIMING_OUT=../outputs/policy-timing.json go test -run TestPolicyTiming` | median `Decide()` time |
 | Live smoke test | `cd web && npm run smoke` (or `npm run smoke -- <url>`) | the deployed site: two new users, passkeys with PRF, send and decrypt ([output](outputs/live-smoke.txt)) |
 | Fuzzing | `cd core && cargo +nightly fuzz run decrypt` (also `decapsulate`, `verify`) | parsers never crash on hostile input |
 | Benchmarks | `cargo bench -p sealdrop-core` | the numbers above |
@@ -293,7 +296,7 @@ SealDrop end to end test
   ok  bob: keys protected by passkey PRF
   ok  alice's passkey lives in her authenticator
 2. alice sends bob a file
-  10:30:24 PM  Sent "plan.txt" (11800 bytes) to bob: encrypted + signed in 21.8 ms, 4538 bytes overhead.
+  11:29:26 PM  Sent "plan.txt" (11800 bytes) to bob: encrypted + signed in 48.0 ms, 4538 bytes overhead.
 3. bob signs out, signs back in with his passkey, decrypts
   ok  bob's keys unwrapped with PRF after a fresh sign in
   ok  bob's decrypted file matches what alice sent
@@ -307,7 +310,7 @@ SealDrop end to end test
 6. Local demo in the browser: round trip and tamper rejection
   ok  WASM round trip OK, tampered copy rejected
 7. Browser benchmark (WASM, 1 MiB, median of 10)
-  seal 37.6 ms (26.6 MiB/s), open 25.1 ms (39.8 MiB/s)
+  seal 44.0 ms (22.7 MiB/s), open 37.6 ms (26.6 MiB/s)
 8. Zero knowledge check: dump the server database
 table users        4 rows
 table credentials  4 rows
@@ -315,13 +318,13 @@ table files        1 rows
 table sessions     4 rows
 
 users (what the server knows about each user):
-  alice        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000facf
-  bob          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000c447
-  eve          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570101000000000000000000000000000000006ae3
-  carol        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570102dccd820da0b5d6cebeb78d3fb0f8528b01f5
+  alice        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000164e
+  bob          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000abc3
+  eve          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570101000000000000000000000000000000002115
+  carol        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570102899cde1ebb70246bd4d4727dc2c1b79f1894
 
 files (sealed blobs):
-  9f92f4b1  alice -> bob  16338 bytes  magic="SDRP"  body entropy=7.989 bits/byte
+  d40a4b7f  alice -> bob  16338 bytes  magic="SDRP"  body entropy=7.987 bits/byte
 
 ZERO KNOWLEDGE CHECK PASSED: no plaintext found (3 needles searched), all blobs are ciphertext
 ```
@@ -350,6 +353,114 @@ cargo bench -p sealdrop-core
 
 This compares X-Wing with plain X25519, ML-DSA-65 with Ed25519, and SealDrop's full seal with the same file format built from X25519 + Ed25519. Laptop numbers move around between runs, so treat them as rough. The full tables are in [`outputs/results.md`](outputs/results.md).
 
+## AI agents: delegated, scoped, revocable access
+
+AI agents get **their own identity**. You can give one access to **specific files, specific actions, until a time you choose**, and take it back at any moment. Every request is recorded as *which agent acted, for whom*. The agent never gets your keys or a shared long-lived credential, and the server still never sees plaintext. The full design is in [docs/AGENTS.md](docs/AGENTS.md).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Alice's browser (WASM)
+    participant S as Server
+    participant M as Agent (MCP server + Rust CLI)
+    participant L as AI model
+    M->>M: init: own X-Wing, ML-DSA, Ed25519 keys (private, never sent)
+    U->>S: register agent (public keys only)
+    Note over U: per granted file: verify, recover file key,<br/>wrap it to the agent's X-Wing key
+    U->>S: grant: files, actions, share list, expiry + wrapped keys
+    S-->>U: grant token (useless without the agent's private key)
+    U-->>M: grant token
+    M->>S: token exchange (RFC 8693): grant token + actor JWT signed by agent key
+    S-->>M: 5 min access token: sub=alice, act=agent, scope, cnf.jkt
+    L->>M: tool call, e.g. download_file(id)
+    M->>S: GET /agent/v1/files/id  + DPoP proof (agent key)
+    Note over S: Decide(): grant valid? action granted? file in grant? → audit row
+    S-->>M: sealed file + key wrapped to this agent
+    Note over M: unwrap key, verify signature, decrypt (Rust CLI)
+    M-->>L: file text (never keys or tokens)
+```
+
+| Piece | What it does |
+|---|---|
+| **Agent identity** | `python -m sealdrop_agent init` generates the agent's keys locally (X-Wing + ML-DSA-65 via the Rust core, Ed25519 for auth). You register only the public bundle. |
+| **Grants** | Deny by default: exact file ids (only files sent to you), actions from `list · download · upload · share`, allowed share recipients, expiry of 1 min to 24 h. |
+| **Tokens** | OAuth 2.0 **token exchange** (RFC 8693) issues 5-minute JWTs with the **`act` claim** (agent acting for user), bound to the agent's key with **DPoP** (RFC 9449). Refreshing only works while the grant is valid. All signing uses `golang-jwt` / PyJWT. |
+| **One policy check** | `Decide()` in [`server/policy.go`](server/policy.go): every agent request passes through it, after token and DPoP checks and with the grant reloaded fresh. |
+| **Key wrapping** | For granted files only, your browser wraps each file key to the agent's X-Wing key, bound to that file and that agent ([`core/src/delegate.rs`](core/src/delegate.rs)). |
+| **Revocation** | One click stops new tokens, kills existing ones on their next request, and deletes the agent's wrapped keys. |
+| **Audit log** | Agent, user acted for, action, file, decision and reason for every request and token exchange, at `/audit.html`. Fails closed. |
+| **MCP server** | [`mcp/`](mcp/): official MCP Python SDK with tools `list_files`, `download_file`, `upload_file`, `share_file`. Crypto runs in a Rust CLI over stdin/stdout. Keys and tokens never appear in tool results. |
+| **Observability** | JSON logs with request ids, Prometheus `/metrics`, `/healthz`. |
+
+### Attack results
+
+Every attack ran against a real server, with real agents and grants created through the web UI ([`web/e2e/agents.mjs`](web/e2e/agents.mjs), [`mcp/tests/attacks.py`](mcp/tests/attacks.py)):
+
+**27 of 27 attack attempts blocked**: expired token and DPoP proof replay, actions and files outside the grant, agent A using agent B's tokens, forged and tampered tokens (`alg: none`, HS256 key confusion, edited claims, attacker-signed), and access after revocation. Note: the real agent run with a prompt injection is not run yet, so it isn't counted.
+
+```
+BLOCKED  [expired token replay] reuse an expired access token with a fresh DPoP proof -> 401 authentication failed: access token invalid: token has invalid claims: token is expired
+BLOCKED  [expired token replay] replay an expired token together with its old DPoP proof -> 401 authentication failed: access token invalid: token has invalid claims: token is expired
+BLOCKED  [expired token replay] refresh (re-exchange) after the grant expired -> 400 grant token rejected: token has invalid claims: token is expired
+BLOCKED  [expired token replay] replay a captured DPoP proof (one-time jti) -> 401 authentication failed: DPoP proof invalid: DPoP proof replayed
+BLOCKED  [action not granted] agent B uploads (grant: list, download) -> 403 action not in token scope
+BLOCKED  [action not granted] agent B shares a file -> 403 action not in token scope
+BLOCKED  [action not granted] agent B downloads a file outside its grant -> 403 file not in grant
+BLOCKED  [action not granted] agent A downloads the never-granted secret file -> 403 file not in grant
+BLOCKED  [action not granted] agent B asks the token endpoint for an extra scope -> 400 scope upload is not in the grant
+BLOCKED  [action not granted] agent A shares to a recipient the grant does not allow -> 403 share recipient not allowed by grant
+BLOCKED  [action not granted] agent A tries an action that does not exist (delete) -> 405 Method Not Allowed
+BLOCKED  [agent A uses B's token] B's access token with A's own DPoP proof -> 401 authentication failed: DPoP proof invalid: DPoP key does not match the token's cnf.jkt
+BLOCKED  [agent A uses B's token] B's access token with no DPoP proof (bearer use) -> 401 authentication failed: missing DPoP proof
+BLOCKED  [agent A uses B's token] B's token with a stolen B proof made for another URL -> 401 authentication failed: DPoP proof invalid: DPoP proof is for a different request
+BLOCKED  [agent A uses B's token] B's grant token exchanged with A's own actor assertion -> 400 this grant is for a different agent
+BLOCKED  [agent A uses B's token] actor assertion claiming to be B, signed with A's key -> 401 actor token rejected: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] access token payload edited: scope widened to upload share -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] access token payload edited: acting-for user changed to bob -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] access token payload edited: expiry pushed a day ahead -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] access token payload edited: cnf.jkt swapped to attacker key -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] access token signed by an attacker's own key -> 401 authentication failed: access token invalid: token signature is invalid: ed25519: verification error
+BLOCKED  [forged or tampered token] alg "none" token -> 401 authentication failed: access token invalid: token signature is invalid: signing method none is invalid
+BLOCKED  [forged or tampered token] HS256 token keyed with the server's public key (alg confusion) -> 401 authentication failed: access token invalid: token signature is invalid: signing method HS256 is invalid
+BLOCKED  [forged or tampered token] self-signed grant token naming another grant -> 400 grant token rejected: token signature is invalid: ed25519: verification error
+BLOCKED  [access after revocation] download with a token issued before revocation -> 403 grant revoked
+BLOCKED  [access after revocation] list with a token issued before revocation -> 403 grant revoked
+BLOCKED  [access after revocation] get a new token (refresh) after revocation -> 400 grant revoked
+ATTACKS: 27/27 attempts blocked across 5 attack classes
+```
+
+**Policy check time:** a median of **143 ns** per `Decide()` call for an allowed request, and **208 ns** for a denial that runs every check. A whole agent request (DPoP signing, HTTP, token verification, grant load, policy, audit write) takes a median of **5.5 ms** on localhost. Details are in [`outputs/results.md`](outputs/results.md).
+
+### Use it with an MCP client
+
+```bash
+cd mcp && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
+```
+
+```bash
+python -m sealdrop_agent init --name "Research bot"
+```
+
+Paste the printed public bundle into **AI agents** on the site, and note the agent id it assigns. Then:
+
+```bash
+python -m sealdrop_agent set-agent-id agt_...
+```
+
+Create a grant in **Grant an agent access**, save the grant token to a file, and load it from stdin so it never lands in shell history:
+
+```bash
+python -m sealdrop_agent set-grant < grant-token.txt
+```
+
+MCP client configuration (Claude Code, Claude Desktop, …):
+
+```json
+{ "mcpServers": { "sealdrop": {
+    "command": "<repo>/mcp/.venv/Scripts/python", "args": ["-m", "sealdrop_agent", "serve"],
+    "env": { "PYTHONPATH": "<repo>/mcp", "SEALDROP_URL": "https://sealdrop.onrender.com" } } } }
+```
+
 ## Deploying
 
 The repository includes a multi-stage [`Dockerfile`](Dockerfile): Rust → WebAssembly, Vite → static files, Go → a static binary, all in a distroless non-root image. On **Render**, create a *Web Service* from the repo with runtime **Docker**. The server picks up Render's `PORT` and `RENDER_EXTERNAL_URL` by itself, and passkeys are bound to that hostname. Two notes for the free plan:
@@ -370,7 +481,10 @@ core/            Rust crypto core
   tests/           official vectors + tamper tests      benches/  criterion
   examples/        quickstart.rs                        fuzz/     cargo-fuzz targets
 wasm/            wasm-bindgen wrapper for the browser
-server/          Go server: passkeys (go-webauthn), SQLite, cmd/dbdump
+server/          Go server: passkeys (go-webauthn), SQLite, cmd/dbdump,
+                 agents, grants, OAuth token exchange, policy.go, audit, metrics
+cli/             sealdrop-agent: Rust CLI the agent uses for crypto
+mcp/             Python MCP server for AI agents (official MCP SDK); tests/ attacks, agent run
 web/             TypeScript + Vite client; e2e/ Playwright tests and screenshots
 docs/            DESIGN, THREAT_MODEL, CRYPTO_REVIEW, primers, images
 outputs/         raw results: tests, benchmarks, fuzzing, e2e, results.md
@@ -401,7 +515,8 @@ The full analysis is in [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md), and the se
 * [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md): assets, attackers, what is and isn't protected
 * [docs/CRYPTO_REVIEW.md](docs/CRYPTO_REVIEW.md): the hygiene checklist applied to this code, plus what to fix next
 * [docs/PRIMER.md](docs/PRIMER.md): KEMs, hybrid encryption, AEAD, HKDF, constant time, in plain language
-* [docs/PRIMER_AGENTS.md](docs/PRIMER_AGENTS.md): authentication vs authorization, token exchange, JWTs (for the upcoming Milestone 7)
+* [docs/AGENTS.md](docs/AGENTS.md): delegated access for AI agents (identities, grants, token exchange, DPoP, policy, audit, MCP)
+* [docs/PRIMER_AGENTS.md](docs/PRIMER_AGENTS.md): authentication vs authorization, token exchange, JWTs, least privilege
 * [PLAN.md](PLAN.md): the milestone plan
 
 ## License

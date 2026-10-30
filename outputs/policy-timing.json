@@ -1,0 +1,14 @@
+{
+ "agent_request_includes": "client DPoP signing, HTTP on localhost, token + DPoP verification, grant load, Decide, audit write, file read",
+ "agent_request_median_us": 5535,
+ "agent_request_samples": 300,
+ "cpus": 12,
+ "decide_allow_median_ns": 143.34075,
+ "decide_allow_p99_ns": 406.4635,
+ "decide_batches_x_calls": "200 x 200000",
+ "decide_deny_median_ns": 208.20274999999998,
+ "decide_deny_p99_ns": 310.9835,
+ "decide_inputs_allow_and_deny": "allowed download; share denied by the final check (all checks run)",
+ "decide_measured_with": "time.Now around 200000-call batches (several ms each, far above clock resolution), median of batch means",
+ "go": "go1.27.0"
+}
