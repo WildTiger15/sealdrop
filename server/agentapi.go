@@ -9,7 +9,7 @@ import (
 	"crypto/sha3"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -123,8 +123,10 @@ func (a *API) recordDecision(r *http.Request, in PolicyInput, d Decision, took t
 	if in.Action == "share" && in.ShareTo != "" {
 		e.Reason += " (recipient " + in.ShareTo + ")"
 	}
+	observePolicy(in.Action, d, took)
 	if !d.Allow {
-		log.Printf("agent request denied: %s %s: %s", r.Method, r.URL.Path, d.Reason)
+		slog.Warn("agent request denied", "request_id", e.RequestID, "actor", e.Actor, "on_behalf_of", e.OnBehalfOf,
+			"action", e.Action, "file_id", e.FileID, "reason", d.Reason)
 	}
 	return a.store.Audit(e)
 }

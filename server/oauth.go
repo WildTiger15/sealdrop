@@ -383,6 +383,11 @@ func (a *API) Token(w http.ResponseWriter, r *http.Request) {
 		form[k] = r.PostForm.Get(k)
 	}
 	resp, user, agentID, grantID, code, reason := a.issuer.Exchange(form)
+	if resp != nil {
+		tokenExchanges.WithLabelValues("issued").Inc()
+	} else {
+		tokenExchanges.WithLabelValues(code).Inc()
+	}
 	if agentID == "" {
 		agentID = "unknown"
 	}

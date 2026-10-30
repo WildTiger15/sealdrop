@@ -32,7 +32,7 @@ func testServer(t *testing.T) (*httptest.Server, *Store, *Auth) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(withRequestID(securityHeaders(routes(auth, &API{auth: auth, store: store, issuer: issuer}, t.TempDir()))))
+	srv := httptest.NewServer(withRequestID(observe(securityHeaders(routes(auth, &API{auth: auth, store: store, issuer: issuer}, t.TempDir())))))
 	issuer.origin = srv.URL // tokens name the test server as issuer
 	testIssuers[srv.URL] = issuer
 	t.Cleanup(srv.Close)
