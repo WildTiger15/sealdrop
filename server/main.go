@@ -93,6 +93,8 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("POST /api/agents", api.requireUser(api.RegisterAgent))
 	mux.HandleFunc("GET /api/agents", api.requireUser(api.MyAgents))
 	mux.HandleFunc("GET /api/agents/{id}/keys", api.AgentKeys)
+	mux.HandleFunc("POST /api/grants", api.requireUser(api.CreateGrant))
+	mux.HandleFunc("GET /api/grants", api.requireUser(api.ListGrants))
 
 	mux.Handle("GET /", http.FileServer(http.Dir(static)))
 	return mux

@@ -1,0 +1,250 @@
+package main
+
+// grants.go: a user delegates *specific* files and *specific* actions to an
+// agent, until an expiry. Anything not written in a grant is denied.
+
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"slices"
+	"strings"
+	"time"
+)
+
+const grantSchema = `
+CREATE TABLE IF NOT EXISTS grants (
+	id         TEXT PRIMARY KEY,        -- "grt_" + random
+	username   TEXT NOT NULL,           -- the user who delegates (acted for)
+	agent_id   TEXT NOT NULL REFERENCES agents(id),
+	actions    TEXT NOT NULL,           -- comma separated subset of list,download,upload,share
+	share_with TEXT NOT NULL DEFAULT '',-- comma separated usernames the agent may share to
+	expires_at INTEGER NOT NULL,
+	revoked_at INTEGER,                 -- NULL while active
+	created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS grant_files (
+	grant_id    TEXT NOT NULL REFERENCES grants(id),
+	file_id     TEXT NOT NULL,
+	wrapped_key BLOB,                   -- file key wrapped to the agent's X-Wing key (step 5)
+	PRIMARY KEY (grant_id, file_id)
+);
+`
+
+// The only actions an agent can ever be given.
+var allActions = []string{"list", "download", "upload", "share"}
+
+const (
+	maxGrantTTL   = 24 * time.Hour
+	maxGrantFiles = 100
+	maxShareWith  = 10
+)
+
+type Grant struct {
+	ID        string   `json:"id"`
+	Username  string   `json:"username"`
+	AgentID   string   `json:"agent_id"`
+	Actions   []string `json:"actions"`
+	ShareWith []string `json:"share_with"`
+	FileIDs   []string `json:"file_ids"`
+	ExpiresAt int64    `json:"expires_at"`
+	RevokedAt *int64   `json:"revoked_at"`
+	CreatedAt int64    `json:"created_at"`
+}
+
+func splitList(s string) []string {
+	if s == "" {
+		return []string{}
+	}
+	return strings.Split(s, ",")
+}
+
+func (s *Store) CreateGrant(g *Grant, wrapped map[string][]byte) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`INSERT INTO grants (id, username, agent_id, actions, share_with, expires_at, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`, g.ID, g.Username, g.AgentID, strings.Join(g.Actions, ","),
+		strings.Join(g.ShareWith, ","), g.ExpiresAt, g.CreatedAt); err != nil {
+		return err
+	}
+	for _, f := range g.FileIDs {
+		if _, err := tx.Exec(`INSERT INTO grant_files (grant_id, file_id, wrapped_key) VALUES (?, ?, ?)`, g.ID, f, wrapped[f]); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *Store) scanGrant(row interface{ Scan(...any) error }) (*Grant, error) {
+	g := &Grant{}
+	var actions, share string
+	var revoked sql.NullInt64
+	if err := row.Scan(&g.ID, &g.Username, &g.AgentID, &actions, &share, &g.ExpiresAt, &revoked, &g.CreatedAt); err != nil {
+		return nil, err
+	}
+	g.Actions, g.ShareWith = splitList(actions), splitList(share)
+	if revoked.Valid {
+		g.RevokedAt = &revoked.Int64
+	}
+	rows, err := s.db.Query(`SELECT file_id FROM grant_files WHERE grant_id = ? ORDER BY file_id`, g.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	g.FileIDs = []string{}
+	for rows.Next() {
+		var f string
+		if err := rows.Scan(&f); err != nil {
+			return nil, err
+		}
+		g.FileIDs = append(g.FileIDs, f)
+	}
+	return g, rows.Err()
+}
+
+const grantCols = `id, username, agent_id, actions, share_with, expires_at, revoked_at, created_at`
+
+func (s *Store) GrantByID(id string) (*Grant, error) {
+	g, err := s.scanGrant(s.db.QueryRow(`SELECT `+grantCols+` FROM grants WHERE id = ?`, id))
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, errNotFound
+	}
+	return g, err
+}
+
+func (s *Store) GrantsOf(username string) ([]*Grant, error) {
+	rows, err := s.db.Query(`SELECT id FROM grants WHERE username = ? ORDER BY created_at DESC`, username)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	rows.Close()
+	out := []*Grant{}
+	for _, id := range ids {
+		g, err := s.GrantByID(id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, g)
+	}
+	return out, nil
+}
+
+// FileRecipient returns who a file was sent to (used to check a user may delegate it).
+func (s *Store) FileRecipient(id string) (string, error) {
+	var r string
+	err := s.db.QueryRow(`SELECT recipient FROM files WHERE id = ?`, id).Scan(&r)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", errNotFound
+	}
+	return r, err
+}
+
+type grantFileReq struct {
+	FileID     string `json:"file_id"`
+	WrappedKey []byte `json:"wrapped_key"` // base64 in JSON
+}
+
+type grantReq struct {
+	AgentID    string         `json:"agent_id"`
+	Actions    []string       `json:"actions"`
+	Files      []grantFileReq `json:"files"`
+	ShareWith  []string       `json:"share_with"`
+	TTLMinutes int            `json:"ttl_minutes"`
+}
+
+// validateGrant turns a request into a Grant, or says why not. Deny by default:
+// unknown actions, files the user can't read, and unknown users are refused.
+func (a *API) validateGrant(u *User, req *grantReq, now time.Time) (*Grant, map[string][]byte, string) {
+	if _, err := a.store.AgentByID(req.AgentID); err != nil {
+		return nil, nil, "no such agent"
+	}
+	if len(req.Actions) == 0 {
+		return nil, nil, "choose at least one action"
+	}
+	actions := []string{}
+	for _, act := range req.Actions {
+		if !slices.Contains(allActions, act) {
+			return nil, nil, "unknown action " + act
+		}
+		if !slices.Contains(actions, act) {
+			actions = append(actions, act)
+		}
+	}
+	ttl := time.Duration(req.TTLMinutes) * time.Minute
+	if ttl <= 0 || ttl > maxGrantTTL {
+		return nil, nil, "expiry must be between 1 minute and 24 hours"
+	}
+	if len(req.Files) > maxGrantFiles || len(req.ShareWith) > maxShareWith {
+		return nil, nil, "too many files or share recipients"
+	}
+	files, wrapped := []string{}, map[string][]byte{}
+	for _, f := range req.Files {
+		rcpt, err := a.store.FileRecipient(f.FileID)
+		if err != nil || rcpt != u.Username {
+			// You can only delegate files you can decrypt: ones sent to you.
+			return nil, nil, "you can only grant files that were sent to you"
+		}
+		if _, dup := wrapped[f.FileID]; dup {
+			continue
+		}
+		files = append(files, f.FileID)
+		wrapped[f.FileID] = f.WrappedKey
+	}
+	share := []string{}
+	for _, name := range req.ShareWith {
+		if other, err := a.store.UserByName(name); err != nil || other.KemPK == nil || name == u.Username {
+			return nil, nil, "unknown share recipient " + name
+		}
+		share = append(share, name)
+	}
+	if slices.Contains(actions, "share") && len(share) == 0 {
+		return nil, nil, "the share action needs at least one allowed recipient"
+	}
+	return &Grant{
+		ID: "grt_" + randomToken()[:24], Username: u.Username, AgentID: req.AgentID,
+		Actions: actions, ShareWith: share, FileIDs: files,
+		ExpiresAt: now.Add(ttl).Unix(), CreatedAt: now.Unix(),
+	}, wrapped, ""
+}
+
+// POST /api/grants
+func (a *API) CreateGrant(w http.ResponseWriter, r *http.Request, u *User) {
+	var req grantReq
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&req); err != nil {
+		httpError(w, http.StatusBadRequest, "bad request")
+		return
+	}
+	g, wrapped, why := a.validateGrant(u, &req, time.Now())
+	if g == nil {
+		httpError(w, http.StatusBadRequest, why)
+		return
+	}
+	if err := a.store.CreateGrant(g, wrapped); err != nil {
+		httpError(w, http.StatusInternalServerError, "could not create grant")
+		return
+	}
+	writeJSON(w, map[string]any{"grant": g})
+}
+
+// GET /api/grants
+func (a *API) ListGrants(w http.ResponseWriter, r *http.Request, u *User) {
+	gs, err := a.store.GrantsOf(u.Username)
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "could not list grants")
+		return
+	}
+	writeJSON(w, gs)
+}
