@@ -1,0 +1,34 @@
+# Rust
+target/
+**/*.rs.bk
+core/fuzz/artifacts/
+core/fuzz/corpus/
+core/fuzz/coverage/
+
+# WebAssembly build output
+wasm/pkg/
+web/src/pkg/
+
+# Node / Vite
+node_modules/
+web/dist/
+
+# Go
+server/sealdrop-server
+server/*.exe
+
+# Local data: never commit databases, keys or credentials
+*.db
+*.db-journal
+*.sqlite
+*.pem
+*.key
+.env
+.env.*
+server/data/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
