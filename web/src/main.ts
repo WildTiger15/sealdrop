@@ -267,6 +267,16 @@ async function refreshGrants() {
       : `until ${new Date(g.expires_at * 1000).toLocaleTimeString()}`;
     li.textContent = `${g.agent_id}: ${g.actions.join(", ")} on ${g.file_ids.length} file(s) · ${state}`;
     li.dataset.grantId = g.id;
+    if (!g.revoked_at && Date.now() / 1000 < g.expires_at) {
+      const btn = document.createElement("button");
+      btn.textContent = "Revoke";
+      btn.onclick = () => busy(btn, async () => {
+        await api(`/api/grants/${encodeURIComponent(g.id)}`, { method: "DELETE" });
+        log(`Revoked grant for ${g.agent_id}: no new tokens, wrapped file keys deleted.`);
+        await refreshGrants();
+      });
+      li.append(btn);
+    }
     ul.append(li);
   }
 }

@@ -100,6 +100,7 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("GET /api/agents/{id}/keys", api.AgentKeys)
 	mux.HandleFunc("POST /api/grants", api.requireUser(api.CreateGrant))
 	mux.HandleFunc("GET /api/grants", api.requireUser(api.ListGrants))
+	mux.HandleFunc("DELETE /api/grants/{id}", api.requireUser(api.RevokeGrant))
 	mux.HandleFunc("POST /oauth/token", api.Token)
 	mux.HandleFunc("GET /agent/v1/files", api.agentRoute("list", api.AgentList))
 	mux.HandleFunc("GET /agent/v1/files/{id}", api.agentRoute("download", api.AgentDownload))

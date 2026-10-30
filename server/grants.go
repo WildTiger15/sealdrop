@@ -144,6 +144,34 @@ func (s *Store) GrantsOf(username string) ([]*Grant, error) {
 	return out, nil
 }
 
+// RevokeGrant ends a grant now and deletes every file key wrapped to the agent
+// under it, in one transaction. Only the user who made the grant may revoke it.
+func (s *Store) RevokeGrant(id, username string, now time.Time) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	res, err := tx.Exec(`UPDATE grants SET revoked_at = COALESCE(revoked_at, ?) WHERE id = ? AND username = ?`, now.Unix(), id, username)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return errNotFound
+	}
+	if _, err := tx.Exec(`UPDATE grant_files SET wrapped_key = NULL WHERE grant_id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// WrappedKeysLeft counts wrapped keys still stored for a grant (0 after revocation).
+func (s *Store) WrappedKeysLeft(grantID string) (int, error) {
+	var n int
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM grant_files WHERE grant_id = ? AND wrapped_key IS NOT NULL`, grantID).Scan(&n)
+	return n, err
+}
+
 // AgentFileKey returns a granted file's sender and the file key wrapped to the agent.
 func (s *Store) AgentFileKey(grantID, fileID string) (sender string, wrapped []byte, err error) {
 	err = s.db.QueryRow(`SELECT f.sender, g.wrapped_key FROM grant_files g JOIN files f ON f.id = g.file_id
@@ -275,6 +303,15 @@ func (a *API) CreateGrant(w http.ResponseWriter, r *http.Request, u *User) {
 		return
 	}
 	writeJSON(w, map[string]any{"grant": g, "grant_token": tok})
+}
+
+// DELETE /api/grants/{id}
+func (a *API) RevokeGrant(w http.ResponseWriter, r *http.Request, u *User) {
+	if err := a.store.RevokeGrant(r.PathValue("id"), u.Username, a.issuer.now()); err != nil {
+		httpError(w, http.StatusNotFound, "no such grant")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // GET /api/grants
