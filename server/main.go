@@ -89,6 +89,11 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("GET /api/files", api.requireUser(api.List))
 	mux.HandleFunc("GET /api/files/{id}", api.requireUser(api.Download))
 
+	// Milestone 7: agents
+	mux.HandleFunc("POST /api/agents", api.requireUser(api.RegisterAgent))
+	mux.HandleFunc("GET /api/agents", api.requireUser(api.MyAgents))
+	mux.HandleFunc("GET /api/agents/{id}/keys", api.AgentKeys)
+
 	mux.Handle("GET /", http.FileServer(http.Dir(static)))
 	return mux
 }

@@ -1,0 +1,17 @@
+[package]
+name = "sealdrop-agent-cli"
+version = "0.1.0"
+edition = "2024"
+description = "Command line crypto helper for SealDrop agents (not audited)"
+publish = false
+
+[[bin]]
+name = "sealdrop-agent"
+path = "src/main.rs"
+
+[dependencies]
+sealdrop-core = { path = "../core" }
+base64 = "0.23.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+zeroize = "1.9.1"

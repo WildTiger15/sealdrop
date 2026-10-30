@@ -54,8 +54,10 @@ func OpenStore(path string) (*Store, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1) // SQLite: one writer; keeps things simple and correct
-	if _, err := db.Exec(schema); err != nil {
-		return nil, err
+	for _, ddl := range []string{schema, agentSchema} {
+		if _, err := db.Exec(ddl); err != nil {
+			return nil, err
+		}
 	}
 	return &Store{db: db}, nil
 }
