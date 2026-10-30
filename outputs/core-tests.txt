@@ -1,0 +1,74 @@
+   Compiling sealdrop-core v0.1.0 (C:\Users\snehd\SealDrop\core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.10s
+     Running unittests src\lib.rs (target\debug\deps\sealdrop_core-e2d03260f3e2715f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\file.rs (target\debug\deps\file-a72a511c2a06417c.exe)
+
+running 13 tests
+test changed_header_or_ciphertext_fails_signature ... ok
+test dropping_final_chunk_is_detected_by_stream_even_without_signature ... ok
+test every_flipped_bit_fails ... bit flips rejected: 4786/4786
+ok
+test forged_sender_fingerprint_fails ... ok
+test header_is_readable_without_keys ... ok
+test round_trip_large_default_chunks ... ok
+test round_trip_many_sizes ... ok
+test signature_from_different_sender_fails ... ok
+test truncated_file_fails ... ok
+test truncated_signature_fails ... ok
+test valid_signature_passes ... ok
+test wrong_recipient_key_fails ... ok
+test wrong_version_fails ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.11s
+
+     Running tests\keywrap.rs (target\debug\deps\keywrap-f60bc233cb2f8ee2.exe)
+
+running 8 tests
+test every_flipped_bit_fails ... ok
+test identity_public_keys_are_stable ... ok
+test passphrase_round_trip ... ok
+test prf_round_trip ... ok
+test short_prf_output_rejected ... ok
+test truncated_and_wrong_version_fail ... ok
+test wrong_key_fails ... ok
+test wrong_user_context_fails ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+
+     Running tests\mldsa.rs (target\debug\deps\mldsa-83640a26a890ede6.exe)
+
+running 4 tests
+test acvp_key_gen ... ML-DSA-65 ACVP keyGen passed: 25/25
+ok
+test acvp_sig_gen ... ML-DSA-65 ACVP sigGen passed: 75/75
+ok
+test acvp_sig_ver ... ML-DSA-65 ACVP sigVer passed: 45/45
+ok
+test sign_verify_round_trip_and_failures ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+
+     Running tests\xwing.rs (target\debug\deps\xwing-fae99558ef5c911d.exe)
+
+running 6 tests
+test encapsulate_is_randomized ... ok
+test invalid_mlkem_public_key_is_rejected ... ok
+test official_test_vectors ... X-Wing official vectors passed: 3/3
+ok
+test round_trip ... ok
+test tampered_ciphertext_gives_different_secret ... ok
+test wrong_secret_key_gives_different_secret ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+   Doc-tests sealdrop_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

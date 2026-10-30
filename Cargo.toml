@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["core", "wasm"]
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[profile.bench]
+opt-level = 3
+
+# Dependencies (crypto crates, Argon2) are slow unoptimized; optimize them even in test builds.
+[profile.dev.package."*"]
+opt-level = 3
