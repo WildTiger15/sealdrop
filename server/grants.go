@@ -269,6 +269,10 @@ func (a *API) validateGrant(u *User, req *grantReq, now time.Time) (*Grant, map[
 		}
 		share = append(share, name)
 	}
+	if slices.Contains(actions, "share") && !slices.Contains(actions, "download") {
+		// Sharing means decrypting and re-encrypting, so the agent must be able to read the file.
+		return nil, nil, "the share action needs the download action too"
+	}
 	if slices.Contains(actions, "share") && len(share) == 0 {
 		return nil, nil, "the share action needs at least one allowed recipient"
 	}

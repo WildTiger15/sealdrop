@@ -62,8 +62,9 @@ func TestGrantValidationDeniesByDefault(t *testing.T) {
 		"expiry over 24h":          func(g *grantReq) { g.TTLMinutes = 24*60 + 1 },
 		"file sent by alice":       func(g *grantReq) { g.Files = []grantFileReq{{FileID: f.bobs}} },
 		"nonexistent file":         func(g *grantReq) { g.Files = []grantFileReq{{FileID: "nope"}} },
-		"share without recipients": func(g *grantReq) { g.Actions = []string{"share"} },
-		"share to unknown user":    func(g *grantReq) { g.Actions = []string{"share"}; g.ShareWith = []string{"mallory"} },
+		"share without recipients": func(g *grantReq) { g.Actions = []string{"download", "share"} },
+		"share without download":   func(g *grantReq) { g.Actions = []string{"share"}; g.ShareWith = []string{"eve"} },
+		"share to unknown user":    func(g *grantReq) { g.Actions = []string{"download", "share"}; g.ShareWith = []string{"mallory"} },
 		"download without key":     func(g *grantReq) { g.Files = []grantFileReq{{FileID: f.fileA}} },
 		"download with bad key":    func(g *grantReq) { g.Files = []grantFileReq{{FileID: f.fileA, WrappedKey: []byte("SDAKshort")}} },
 	}
