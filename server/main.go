@@ -62,7 +62,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              *addr,
-		Handler:           securityHeaders(routes(auth, api, *static)),
+		Handler:           withRequestID(securityHeaders(routes(auth, api, *static))),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       2 * time.Minute,
 		WriteTimeout:      2 * time.Minute,
@@ -101,6 +101,7 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("POST /api/grants", api.requireUser(api.CreateGrant))
 	mux.HandleFunc("GET /api/grants", api.requireUser(api.ListGrants))
 	mux.HandleFunc("DELETE /api/grants/{id}", api.requireUser(api.RevokeGrant))
+	mux.HandleFunc("GET /api/audit", api.requireUser(api.AuditLog))
 	mux.HandleFunc("POST /oauth/token", api.Token)
 	mux.HandleFunc("GET /agent/v1/files", api.agentRoute("list", api.AgentList))
 	mux.HandleFunc("GET /agent/v1/files/{id}", api.agentRoute("download", api.AgentDownload))

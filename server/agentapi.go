@@ -86,7 +86,11 @@ func (a *API) agentRoute(action string, h agentHandler) http.HandlerFunc {
 
 		start := time.Now()
 		d := Decide(in)
-		a.recordDecision(r, in, d, time.Since(start))
+		if err := a.recordDecision(r, in, d, time.Since(start)); err != nil && d.Allow {
+			// Fail closed: an action we can't record is an action we don't allow.
+			httpError(w, http.StatusServiceUnavailable, "audit log unavailable")
+			return
+		}
 
 		if !d.Allow {
 			if authErr != "" {
@@ -106,11 +110,23 @@ func (a *API) agentRoute(action string, h agentHandler) http.HandlerFunc {
 	}
 }
 
-// recordDecision is extended in later steps (audit log, metrics). For now it logs denials.
-func (a *API) recordDecision(r *http.Request, in PolicyInput, d Decision, took time.Duration) {
+// recordDecision writes the audit row for one policy decision.
+func (a *API) recordDecision(r *http.Request, in PolicyInput, d Decision, took time.Duration) error {
+	e := AuditEntry{
+		RequestID: requestID(r), Actor: "unknown", Action: in.Action, FileID: in.FileID,
+		Decision: decisionWord(d.Allow), Reason: d.Reason,
+	}
+	if in.Token != nil {
+		// Only *verified* claims are recorded; an unverifiable token stays "unknown".
+		e.Actor, e.OnBehalfOf, e.GrantID = in.Token.Act.Sub, in.Token.Subject, in.Token.GrantID
+	}
+	if in.Action == "share" && in.ShareTo != "" {
+		e.Reason += " (recipient " + in.ShareTo + ")"
+	}
 	if !d.Allow {
 		log.Printf("agent request denied: %s %s: %s", r.Method, r.URL.Path, d.Reason)
 	}
+	return a.store.Audit(e)
 }
 
 // GET /agent/v1/files: metadata of the files in the grant.

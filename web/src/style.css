@@ -100,3 +100,10 @@ code { font-size: 13px; word-break: break-all; }
   white-space: pre-wrap;
   font-size: 13px;
 }
+main.wide { max-width: 1200px; }
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+tr.deny td:nth-child(6) { color: var(--warn); font-weight: 600; }
+tr.allow td:nth-child(6) { color: var(--accent); }

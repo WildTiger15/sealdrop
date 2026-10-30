@@ -297,6 +297,9 @@ func (a *API) CreateGrant(w http.ResponseWriter, r *http.Request, u *User) {
 	}
 	// The grant token is the RFC 8693 subject token the agent will exchange.
 	// It is useless on its own: exchanging it also needs the agent's private key.
+	a.store.Audit(AuditEntry{RequestID: requestID(r), Actor: u.Username, OnBehalfOf: u.Username, Action: "grant_create",
+		GrantID: g.ID, Decision: "allow", Reason: "granted " + g.AgentID + ": " + strings.Join(g.Actions, ",") +
+			" on " + strings.Join(g.FileIDs, ",")})
 	tok, err := a.issuer.MintGrantToken(g)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "could not sign grant token")
@@ -311,6 +314,8 @@ func (a *API) RevokeGrant(w http.ResponseWriter, r *http.Request, u *User) {
 		httpError(w, http.StatusNotFound, "no such grant")
 		return
 	}
+	a.store.Audit(AuditEntry{RequestID: requestID(r), Actor: u.Username, OnBehalfOf: u.Username, Action: "grant_revoke",
+		GrantID: r.PathValue("id"), Decision: "allow", Reason: "grant revoked and wrapped file keys deleted"})
 	w.WriteHeader(http.StatusNoContent)
 }
 

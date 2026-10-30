@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SealDrop Audit Log</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Audit log</h1>
+      <p class="tagline">Every request an agent made on your behalf, every token it was issued, and every grant you changed.</p>
+      <p><a href="/">← Back to SealDrop</a></p>
+    </header>
+    <main class="wide">
+      <section>
+        <div class="row">
+          <button id="reload">Reload</button>
+          <label class="inline"><input type="checkbox" id="only-deny" /> denials only</label>
+        </div>
+        <p id="status" class="muted"></p>
+        <div class="table-scroll">
+          <table id="audit">
+            <thead>
+              <tr>
+                <th>Time</th><th>Agent / actor</th><th>Acting for</th><th>Action</th><th>File</th>
+                <th>Decision</th><th>Reason</th><th>Request id</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/audit.ts"></script>
+  </body>
+</html>

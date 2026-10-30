@@ -382,7 +382,17 @@ func (a *API) Token(w http.ResponseWriter, r *http.Request) {
 	for _, k := range []string{"grant_type", "subject_token", "subject_token_type", "actor_token", "actor_token_type", "requested_token_type", "scope"} {
 		form[k] = r.PostForm.Get(k)
 	}
-	resp, _, _, _, code, reason := a.issuer.Exchange(form)
+	resp, user, agentID, grantID, code, reason := a.issuer.Exchange(form)
+	if agentID == "" {
+		agentID = "unknown"
+	}
+	if err := a.store.Audit(AuditEntry{
+		RequestID: requestID(r), Actor: agentID, OnBehalfOf: user, Action: "token_exchange",
+		GrantID: grantID, Decision: decisionWord(resp != nil), Reason: reason,
+	}); err != nil && resp != nil {
+		writeOAuthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", "audit log unavailable")
+		return
+	}
 	if resp == nil {
 		status := http.StatusBadRequest
 		if code == "invalid_client" {
