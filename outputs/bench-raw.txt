@@ -1,0 +1,180 @@
+    Finished `bench` profile [optimized] target(s) in 5.95s
+Gnuplot not found, using plotters backend
+Benchmarking kem/xwing/keygen
+Benchmarking kem/xwing/keygen: Warming up for 3.0000 s
+Benchmarking kem/xwing/keygen: Collecting 100 samples in estimated 5.6976 s (25k iterations)
+Benchmarking kem/xwing/keygen: Analyzing
+kem/xwing/keygen        time:   [202.03 µs 224.71 µs 248.17 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high mild
+Benchmarking kem/xwing/encapsulate
+Benchmarking kem/xwing/encapsulate: Warming up for 3.0000 s
+Benchmarking kem/xwing/encapsulate: Collecting 100 samples in estimated 5.6423 s (25k iterations)
+Benchmarking kem/xwing/encapsulate: Analyzing
+kem/xwing/encapsulate   time:   [200.42 µs 232.93 µs 268.13 µs]
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) high mild
+  7 (7.00%) high severe
+Benchmarking kem/xwing/decapsulate
+Benchmarking kem/xwing/decapsulate: Warming up for 3.0000 s
+Benchmarking kem/xwing/decapsulate: Collecting 100 samples in estimated 5.9819 s (25k iterations)
+Benchmarking kem/xwing/decapsulate: Analyzing
+kem/xwing/decapsulate   time:   [320.32 µs 329.23 µs 337.96 µs]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+Benchmarking kem/x25519/keygen
+Benchmarking kem/x25519/keygen: Warming up for 3.0000 s
+Benchmarking kem/x25519/keygen: Collecting 100 samples in estimated 5.0149 s (157k iterations)
+Benchmarking kem/x25519/keygen: Analyzing
+kem/x25519/keygen       time:   [32.754 µs 33.620 µs 34.492 µs]
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
+Benchmarking kem/x25519/encapsulate
+Benchmarking kem/x25519/encapsulate: Warming up for 3.0000 s
+Benchmarking kem/x25519/encapsulate: Collecting 100 samples in estimated 5.0250 s (40k iterations)
+Benchmarking kem/x25519/encapsulate: Analyzing
+kem/x25519/encapsulate  time:   [127.55 µs 130.31 µs 133.05 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+  2 (2.00%) high severe
+Benchmarking kem/x25519/decapsulate
+Benchmarking kem/x25519/decapsulate: Warming up for 3.0000 s
+Benchmarking kem/x25519/decapsulate: Collecting 100 samples in estimated 5.0891 s (61k iterations)
+Benchmarking kem/x25519/decapsulate: Analyzing
+kem/x25519/decapsulate  time:   [84.041 µs 85.401 µs 86.813 µs]
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+
+Benchmarking sig/mldsa65/keygen
+Benchmarking sig/mldsa65/keygen: Warming up for 3.0000 s
+Benchmarking sig/mldsa65/keygen: Collecting 100 samples in estimated 6.4718 s (10k iterations)
+Benchmarking sig/mldsa65/keygen: Analyzing
+sig/mldsa65/keygen      time:   [634.66 µs 647.11 µs 660.77 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) low mild
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+Benchmarking sig/mldsa65/sign
+Benchmarking sig/mldsa65/sign: Warming up for 3.0000 s
+
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 7.9s, enable flat sampling, or reduce sample count to 50.
+Benchmarking sig/mldsa65/sign: Collecting 100 samples in estimated 7.8540 s (5050 iterations)
+Benchmarking sig/mldsa65/sign: Analyzing
+sig/mldsa65/sign        time:   [1.5639 ms 1.5941 ms 1.6237 ms]
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) low severe
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+Benchmarking sig/mldsa65/verify
+Benchmarking sig/mldsa65/verify: Warming up for 3.0000 s
+Benchmarking sig/mldsa65/verify: Collecting 100 samples in estimated 5.4432 s (15k iterations)
+Benchmarking sig/mldsa65/verify: Analyzing
+sig/mldsa65/verify      time:   [232.77 µs 255.46 µs 283.13 µs]
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) high mild
+  2 (2.00%) high severe
+Benchmarking sig/ed25519/keygen
+Benchmarking sig/ed25519/keygen: Warming up for 3.0000 s
+Benchmarking sig/ed25519/keygen: Collecting 100 samples in estimated 5.0949 s (187k iterations)
+Benchmarking sig/ed25519/keygen: Analyzing
+sig/ed25519/keygen      time:   [23.822 µs 25.323 µs 26.938 µs]
+Found 7 outliers among 100 measurements (7.00%)
+  6 (6.00%) high mild
+  1 (1.00%) high severe
+Benchmarking sig/ed25519/sign
+Benchmarking sig/ed25519/sign: Warming up for 3.0000 s
+Benchmarking sig/ed25519/sign: Collecting 100 samples in estimated 5.0566 s (152k iterations)
+Benchmarking sig/ed25519/sign: Analyzing
+sig/ed25519/sign        time:   [33.921 µs 35.882 µs 38.200 µs]
+Found 6 outliers among 100 measurements (6.00%)
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+Benchmarking sig/ed25519/verify
+Benchmarking sig/ed25519/verify: Warming up for 3.0000 s
+Benchmarking sig/ed25519/verify: Collecting 100 samples in estimated 5.2769 s (66k iterations)
+Benchmarking sig/ed25519/verify: Analyzing
+sig/ed25519/verify      time:   [57.875 µs 63.527 µs 70.699 µs]
+Found 12 outliers among 100 measurements (12.00%)
+  5 (5.00%) high mild
+  7 (7.00%) high severe
+
+Benchmarking file/sealdrop_seal/65536
+Benchmarking file/sealdrop_seal/65536: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/65536: Collecting 20 samples in estimated 5.4480 s (2520 iterations)
+Benchmarking file/sealdrop_seal/65536: Analyzing
+file/sealdrop_seal/65536
+                        time:   [2.2721 ms 2.4461 ms 2.6188 ms]
+                        thrpt:  [23.865 MiB/s 25.551 MiB/s 27.508 MiB/s]
+Benchmarking file/sealdrop_open/65536
+Benchmarking file/sealdrop_open/65536: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/65536: Collecting 20 samples in estimated 5.1914 s (5460 iterations)
+Benchmarking file/sealdrop_open/65536: Analyzing
+file/sealdrop_open/65536
+                        time:   [765.26 µs 839.15 µs 960.04 µs]
+                        thrpt:  [65.101 MiB/s 74.480 MiB/s 81.672 MiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking file/classic_x25519_encrypt/65536
+Benchmarking file/classic_x25519_encrypt/65536: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_encrypt/65536: Collecting 20 samples in estimated 5.0254 s (36k iterations)
+Benchmarking file/classic_x25519_encrypt/65536: Analyzing
+file/classic_x25519_encrypt/65536
+                        time:   [115.69 µs 122.03 µs 131.09 µs]
+                        thrpt:  [476.77 MiB/s 512.15 MiB/s 540.26 MiB/s]
+Benchmarking file/sealdrop_seal/1048576
+Benchmarking file/sealdrop_seal/1048576: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/1048576: Collecting 20 samples in estimated 5.8262 s (630 iterations)
+Benchmarking file/sealdrop_seal/1048576: Analyzing
+file/sealdrop_seal/1048576
+                        time:   [8.1049 ms 9.1072 ms 10.488 ms]
+                        thrpt:  [95.346 MiB/s 109.80 MiB/s 123.38 MiB/s]
+Benchmarking file/sealdrop_open/1048576
+Benchmarking file/sealdrop_open/1048576: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/1048576: Collecting 20 samples in estimated 5.3477 s (840 iterations)
+Benchmarking file/sealdrop_open/1048576: Analyzing
+file/sealdrop_open/1048576
+                        time:   [6.0722 ms 6.1989 ms 6.3440 ms]
+                        thrpt:  [157.63 MiB/s 161.32 MiB/s 164.69 MiB/s]
+Found 3 outliers among 20 measurements (15.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+Benchmarking file/classic_x25519_encrypt/1048576
+Benchmarking file/classic_x25519_encrypt/1048576: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_encrypt/1048576: Collecting 20 samples in estimated 5.0695 s (2940 iterations)
+Benchmarking file/classic_x25519_encrypt/1048576: Analyzing
+file/classic_x25519_encrypt/1048576
+                        time:   [1.5125 ms 1.6078 ms 1.6878 ms]
+                        thrpt:  [592.49 MiB/s 621.97 MiB/s 661.17 MiB/s]
+Benchmarking file/sealdrop_seal/16777216
+Benchmarking file/sealdrop_seal/16777216: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/16777216: Collecting 20 samples in estimated 5.2134 s (40 iterations)
+Benchmarking file/sealdrop_seal/16777216: Analyzing
+file/sealdrop_seal/16777216
+                        time:   [105.01 ms 123.40 ms 147.62 ms]
+                        thrpt:  [108.39 MiB/s 129.66 MiB/s 152.36 MiB/s]
+Found 3 outliers among 20 measurements (15.00%)
+  2 (10.00%) high mild
+  1 (5.00%) high severe
+Benchmarking file/sealdrop_open/16777216
+Benchmarking file/sealdrop_open/16777216: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/16777216: Collecting 20 samples in estimated 5.3977 s (60 iterations)
+Benchmarking file/sealdrop_open/16777216: Analyzing
+file/sealdrop_open/16777216
+                        time:   [87.810 ms 90.861 ms 94.063 ms]
+                        thrpt:  [170.10 MiB/s 176.09 MiB/s 182.21 MiB/s]
+Benchmarking file/classic_x25519_encrypt/16777216
+Benchmarking file/classic_x25519_encrypt/16777216: Warming up for 3.0000 s
+
+Warning: Unable to complete 20 samples in 5.0s. You may wish to increase target time to 6.4s, enable flat sampling, or reduce sample count to 10.
+Benchmarking file/classic_x25519_encrypt/16777216: Collecting 20 samples in estimated 6.4197 s (210 iterations)
+Benchmarking file/classic_x25519_encrypt/16777216: Analyzing
+file/classic_x25519_encrypt/16777216
+                        time:   [27.174 ms 28.324 ms 29.956 ms]
+                        thrpt:  [534.12 MiB/s 564.90 MiB/s 588.80 MiB/s]
+Found 3 outliers among 20 measurements (15.00%)
+  2 (10.00%) high mild
+  1 (5.00%) high severe
+

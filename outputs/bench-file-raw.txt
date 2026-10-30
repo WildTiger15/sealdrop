@@ -1,0 +1,141 @@
+    Finished `bench` profile [optimized] target(s) in 52.77s
+Gnuplot not found, using plotters backend
+Benchmarking file/sealdrop_seal/65536
+Benchmarking file/sealdrop_seal/65536: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/65536: Collecting 20 samples in estimated 5.1111 s (2730 iterations)
+Benchmarking file/sealdrop_seal/65536: Analyzing
+file/sealdrop_seal/65536
+                        time:   [1.6700 ms 1.7237 ms 1.7740 ms]
+                        thrpt:  [35.231 MiB/s 36.259 MiB/s 37.425 MiB/s]
+                 change:
+                        time:   [−31.290% −26.962% −22.365%] (p = 0.00 < 0.05)
+                        thrpt:  [+28.808% +36.916% +45.539%]
+                        Performance has improved.
+Benchmarking file/sealdrop_open/65536
+Benchmarking file/sealdrop_open/65536: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/65536: Collecting 20 samples in estimated 5.0781 s (6930 iterations)
+Benchmarking file/sealdrop_open/65536: Analyzing
+file/sealdrop_open/65536
+                        time:   [673.87 µs 736.13 µs 829.93 µs]
+                        thrpt:  [75.307 MiB/s 84.903 MiB/s 92.748 MiB/s]
+                 change:
+                        time:   [−29.998% −19.247% −6.3801%] (p = 0.01 < 0.05)
+                        thrpt:  [+6.8148% +23.835% +42.853%]
+                        Performance has improved.
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+Benchmarking file/classic_x25519_encrypt/65536
+Benchmarking file/classic_x25519_encrypt/65536: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_encrypt/65536: Collecting 20 samples in estimated 5.0183 s (37k iterations)
+Benchmarking file/classic_x25519_encrypt/65536: Analyzing
+file/classic_x25519_encrypt/65536
+                        time:   [113.70 µs 117.03 µs 122.73 µs]
+                        thrpt:  [509.23 MiB/s 534.07 MiB/s 549.68 MiB/s]
+                 change:
+                        time:   [−9.2972% −1.1321% +8.5381%] (p = 0.82 > 0.05)
+                        thrpt:  [−7.8665% +1.1451% +10.250%]
+                        No change in performance detected.
+Found 4 outliers among 20 measurements (20.00%)
+  1 (5.00%) low mild
+  1 (5.00%) high mild
+  2 (10.00%) high severe
+Benchmarking file/classic_x25519_ed25519_seal/65536
+Benchmarking file/classic_x25519_ed25519_seal/65536: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_ed25519_seal/65536: Collecting 20 samples in estimated 5.0408 s (14k iterations)
+Benchmarking file/classic_x25519_ed25519_seal/65536: Analyzing
+file/classic_x25519_ed25519_seal/65536
+                        time:   [304.05 µs 309.09 µs 315.99 µs]
+                        thrpt:  [197.79 MiB/s 202.21 MiB/s 205.56 MiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking file/sealdrop_seal/1048576
+Benchmarking file/sealdrop_seal/1048576: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/1048576: Collecting 20 samples in estimated 5.0640 s (630 iterations)
+Benchmarking file/sealdrop_seal/1048576: Analyzing
+file/sealdrop_seal/1048576
+                        time:   [7.4941 ms 8.0736 ms 8.5786 ms]
+                        thrpt:  [116.57 MiB/s 123.86 MiB/s 133.44 MiB/s]
+                 change:
+                        time:   [−40.716% −30.087% −16.647%] (p = 0.00 < 0.05)
+                        thrpt:  [+19.972% +43.035% +68.679%]
+                        Performance has improved.
+Benchmarking file/sealdrop_open/1048576
+Benchmarking file/sealdrop_open/1048576: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/1048576: Collecting 20 samples in estimated 6.0023 s (840 iterations)
+Benchmarking file/sealdrop_open/1048576: Analyzing
+file/sealdrop_open/1048576
+                        time:   [5.4218 ms 5.5993 ms 5.7792 ms]
+                        thrpt:  [173.04 MiB/s 178.59 MiB/s 184.44 MiB/s]
+                 change:
+                        time:   [−18.360% −13.061% −7.7911%] (p = 0.00 < 0.05)
+                        thrpt:  [+8.4494% +15.023% +22.490%]
+                        Performance has improved.
+Benchmarking file/classic_x25519_encrypt/1048576
+Benchmarking file/classic_x25519_encrypt/1048576: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_encrypt/1048576: Collecting 20 samples in estimated 5.2852 s (2730 iterations)
+Benchmarking file/classic_x25519_encrypt/1048576: Analyzing
+file/classic_x25519_encrypt/1048576
+                        time:   [1.3470 ms 1.3983 ms 1.4511 ms]
+                        thrpt:  [689.15 MiB/s 715.14 MiB/s 742.38 MiB/s]
+                 change:
+                        time:   [−10.620% +8.2162% +30.199%] (p = 0.55 > 0.05)
+                        thrpt:  [−23.194% −7.5924% +11.882%]
+                        No change in performance detected.
+Found 3 outliers among 20 measurements (15.00%)
+  3 (15.00%) high severe
+Benchmarking file/classic_x25519_ed25519_seal/1048576
+Benchmarking file/classic_x25519_ed25519_seal/1048576: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_ed25519_seal/1048576: Collecting 20 samples in estimated 5.0114 s (840 iterations)
+Benchmarking file/classic_x25519_ed25519_seal/1048576: Analyzing
+file/classic_x25519_ed25519_seal/1048576
+                        time:   [4.9635 ms 5.4924 ms 6.3443 ms]
+                        thrpt:  [157.62 MiB/s 182.07 MiB/s 201.47 MiB/s]
+Found 2 outliers among 20 measurements (10.00%)
+  1 (5.00%) high mild
+  1 (5.00%) high severe
+Benchmarking file/sealdrop_seal/16777216
+Benchmarking file/sealdrop_seal/16777216: Warming up for 3.0000 s
+Benchmarking file/sealdrop_seal/16777216: Collecting 20 samples in estimated 5.3600 s (60 iterations)
+Benchmarking file/sealdrop_seal/16777216: Analyzing
+file/sealdrop_seal/16777216
+                        time:   [86.101 ms 89.099 ms 92.372 ms]
+                        thrpt:  [173.21 MiB/s 179.58 MiB/s 185.83 MiB/s]
+                 change:
+                        time:   [−39.726% −27.798% −14.576%] (p = 0.00 < 0.05)
+                        thrpt:  [+17.063% +38.501% +65.910%]
+                        Performance has improved.
+Benchmarking file/sealdrop_open/16777216
+Benchmarking file/sealdrop_open/16777216: Warming up for 3.0000 s
+Benchmarking file/sealdrop_open/16777216: Collecting 20 samples in estimated 6.0011 s (80 iterations)
+Benchmarking file/sealdrop_open/16777216: Analyzing
+file/sealdrop_open/16777216
+                        time:   [81.090 ms 85.116 ms 90.158 ms]
+                        thrpt:  [177.47 MiB/s 187.98 MiB/s 197.31 MiB/s]
+                 change:
+                        time:   [−11.939% −6.3234% +0.1228%] (p = 0.05 > 0.05)
+                        thrpt:  [−0.1226% +6.7502% +13.558%]
+                        No change in performance detected.
+Found 1 outliers among 20 measurements (5.00%)
+  1 (5.00%) high severe
+Benchmarking file/classic_x25519_encrypt/16777216
+Benchmarking file/classic_x25519_encrypt/16777216: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_encrypt/16777216: Collecting 20 samples in estimated 9.5525 s (420 iterations)
+Benchmarking file/classic_x25519_encrypt/16777216: Analyzing
+file/classic_x25519_encrypt/16777216
+                        time:   [22.143 ms 22.642 ms 23.366 ms]
+                        thrpt:  [684.75 MiB/s 706.65 MiB/s 722.58 MiB/s]
+                 change:
+                        time:   [−27.738% −20.354% −12.594%] (p = 0.00 < 0.05)
+                        thrpt:  [+14.408% +25.555% +38.385%]
+                        Performance has improved.
+Found 2 outliers among 20 measurements (10.00%)
+  2 (10.00%) high mild
+Benchmarking file/classic_x25519_ed25519_seal/16777216
+Benchmarking file/classic_x25519_ed25519_seal/16777216: Warming up for 3.0000 s
+Benchmarking file/classic_x25519_ed25519_seal/16777216: Collecting 20 samples in estimated 5.5915 s (80 iterations)
+Benchmarking file/classic_x25519_ed25519_seal/16777216: Analyzing
+file/classic_x25519_ed25519_seal/16777216
+                        time:   [76.891 ms 81.958 ms 87.336 ms]
+                        thrpt:  [183.20 MiB/s 195.22 MiB/s 208.09 MiB/s]
+

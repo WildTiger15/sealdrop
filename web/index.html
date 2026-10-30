@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SealDrop</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>SealDrop</h1>
+      <p class="tagline">Post quantum end to end encrypted file sharing, unlocked with a passkey.</p>
+      <p class="warning">Not audited. A learning project: do not use for real secrets.</p>
+    </header>
+
+    <main>
+      <section id="account">
+        <h2>Account</h2>
+        <div id="signed-out">
+          <label>Username <input id="username" autocomplete="username webauthn" placeholder="alice" /></label>
+          <div class="row">
+            <button id="register">Create account with passkey</button>
+            <button id="login">Sign in with passkey</button>
+          </div>
+          <div id="passphrase-box" hidden>
+            <p class="weak">
+              Your browser or passkey does not support the PRF extension, so your private keys can't be
+              protected by the passkey. Fallback: protect them with a passphrase.
+              <strong>This is weaker</strong>: anyone who steals the server database can try to guess it offline.
+            </p>
+            <label>Passphrase <input id="passphrase" type="password" autocomplete="new-password" /></label>
+            <button id="passphrase-go">Continue with passphrase</button>
+          </div>
+        </div>
+        <div id="signed-in" hidden>
+          <p>Signed in as <strong id="me"></strong> · keys protected by <span id="key-protection"></span></p>
+          <p class="fp">Your key fingerprint: <code id="my-fp"></code></p>
+          <button id="logout">Sign out</button>
+        </div>
+      </section>
+
+      <section id="send" hidden>
+        <h2>Send a file</h2>
+        <label>Recipient <input id="recipient" placeholder="bob" /></label>
+        <label>File <input id="send-file" type="file" /></label>
+        <button id="send-go">Encrypt, sign and upload</button>
+      </section>
+
+      <section id="inbox" hidden>
+        <h2>Files</h2>
+        <button id="refresh">Refresh</button>
+        <ul id="file-list"></ul>
+      </section>
+
+      <section id="local-demo">
+        <h2>Local demo (no server)</h2>
+        <p>Makes two throwaway identities in this tab, encrypts a file from Alice to Bob, and decrypts it
+          again. Everything runs in Rust compiled to WebAssembly.</p>
+        <label>File <input id="demo-file" type="file" /></label>
+        <div class="row">
+          <button id="demo-go">Encrypt and decrypt</button>
+          <button id="demo-bench">Benchmark (1 MiB × 10)</button>
+        </div>
+      </section>
+
+      <pre id="log" aria-live="polite"></pre>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

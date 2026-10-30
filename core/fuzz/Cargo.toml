@@ -1,0 +1,37 @@
+[package]
+name = "sealdrop-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+sealdrop-core = { path = "..", features = ["hazmat"] }
+
+# Keep this crate out of the main workspace.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "decrypt"
+path = "fuzz_targets/decrypt.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decapsulate"
+path = "fuzz_targets/decapsulate.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "verify"
+path = "fuzz_targets/verify.rs"
+test = false
+doc = false
+bench = false

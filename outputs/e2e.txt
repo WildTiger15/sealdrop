@@ -1,0 +1,37 @@
+SealDrop end to end test
+1. Register alice and bob with passkeys (virtual authenticator with PRF)
+  ok  alice: keys protected by passkey PRF
+  ok  bob: keys protected by passkey PRF
+  ok  alice's passkey lives in her authenticator
+2. alice sends bob a file
+  10:30:24 PM  Sent "plan.txt" (11800 bytes) to bob: encrypted + signed in 21.8 ms, 4538 bytes overhead.
+3. bob signs out, signs back in with his passkey, decrypts
+  ok  bob's keys unwrapped with PRF after a fresh sign in
+  ok  bob's decrypted file matches what alice sent
+  ok  ML-DSA signature verified before decryption
+4. eve cannot fetch the file, and the server rejects non-SealDrop uploads
+  ok  eve gets 404 for a file not addressed to her
+  ok  server refuses a blob that is not a sealed file
+5. carol's authenticator has no PRF: passphrase fallback, labeled weaker
+  ok  fallback is clearly labeled weaker
+  ok  carol's keys are protected by the passphrase
+6. Local demo in the browser: round trip and tamper rejection
+  ok  WASM round trip OK, tampered copy rejected
+7. Browser benchmark (WASM, 1 MiB, median of 10)
+  seal 37.6 ms (26.6 MiB/s), open 25.1 ms (39.8 MiB/s)
+8. Zero knowledge check: dump the server database
+table users        4 rows
+table credentials  4 rows
+table files        1 rows
+table sessions     4 rows
+
+users (what the server knows about each user):
+  alice        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000facf
+  bob          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b57010100000000000000000000000000000000c447
+  eve          kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570101000000000000000000000000000000006ae3
+  carol        kem_pk=1216B sig_vk=1952B wrapped_keys=126B magic="SDKW" prefix=53444b570102dccd820da0b5d6cebeb78d3fb0f8528b01f5
+
+files (sealed blobs):
+  9f92f4b1  alice -> bob  16338 bytes  magic="SDRP"  body entropy=7.989 bits/byte
+
+ZERO KNOWLEDGE CHECK PASSED: no plaintext found (3 needles searched), all blobs are ciphertext

@@ -1,0 +1,85 @@
+:root {
+  --bg: #f7f7f5;
+  --fg: #1d1d1f;
+  --muted: #5f6368;
+  --card: #ffffff;
+  --border: #dedede;
+  --accent: #1a5fb4;
+  --warn: #9a3412;
+  --warn-bg: #fff4e5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161618;
+    --fg: #ececec;
+    --muted: #a0a0a8;
+    --card: #1f1f23;
+    --border: #34343a;
+    --accent: #78aeff;
+    --warn: #fdba74;
+    --warn-bg: #2b1d10;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+header, main { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 32px; }
+h1 { margin: 0; font-size: 32px; letter-spacing: -0.02em; }
+h2 { margin-top: 0; font-size: 20px; }
+.tagline { color: var(--muted); margin: 4px 0 8px; }
+.warning, .weak {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 16px 0;
+}
+label { display: block; margin: 8px 0; }
+input:not([type="file"]) {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--card);
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: progress; }
+#file-list { padding-left: 18px; }
+#file-list li { margin: 6px 0; }
+#file-list button { padding: 2px 10px; margin-left: 8px; }
+code { font-size: 13px; word-break: break-all; }
+.fp { color: var(--muted); }
+#log {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-height: 3em;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
