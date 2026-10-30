@@ -23,8 +23,9 @@ const (
 var sealedMagic = []byte("SDRP")
 
 type API struct {
-	auth  *Auth
-	store *Store
+	auth   *Auth
+	store  *Store
+	issuer *Issuer
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

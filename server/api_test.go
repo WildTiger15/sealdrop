@@ -14,6 +14,8 @@ import (
 
 // testServer builds the real router with a temp database. Passkey ceremonies
 // need a browser, so users are created directly and given a session cookie.
+var testIssuers = map[string]*Issuer{}
+
 func testServer(t *testing.T) (*httptest.Server, *Store, *Auth) {
 	t.Helper()
 	store, err := OpenStore(filepath.Join(t.TempDir(), "test.db"))
@@ -26,7 +28,13 @@ func testServer(t *testing.T) (*httptest.Server, *Store, *Auth) {
 		t.Fatal(err)
 	}
 	auth := &Auth{wa: wa, store: store, ceremonies: map[string]*ceremony{}}
-	srv := httptest.NewServer(securityHeaders(routes(auth, &API{auth: auth, store: store}, t.TempDir())))
+	issuer, err := LoadOrCreateIssuer(store, "placeholder", filepath.Join(t.TempDir(), "token_key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(securityHeaders(routes(auth, &API{auth: auth, store: store, issuer: issuer}, t.TempDir())))
+	issuer.origin = srv.URL // tokens name the test server as issuer
+	testIssuers[srv.URL] = issuer
 	t.Cleanup(srv.Close)
 	return srv, store, auth
 }

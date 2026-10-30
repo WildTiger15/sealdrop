@@ -236,7 +236,14 @@ func (a *API) CreateGrant(w http.ResponseWriter, r *http.Request, u *User) {
 		httpError(w, http.StatusInternalServerError, "could not create grant")
 		return
 	}
-	writeJSON(w, map[string]any{"grant": g})
+	// The grant token is the RFC 8693 subject token the agent will exchange.
+	// It is useless on its own: exchanging it also needs the agent's private key.
+	tok, err := a.issuer.MintGrantToken(g)
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, "could not sign grant token")
+		return
+	}
+	writeJSON(w, map[string]any{"grant": g, "grant_token": tok})
 }
 
 // GET /api/grants

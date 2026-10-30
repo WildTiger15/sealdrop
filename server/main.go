@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -52,8 +53,12 @@ func main() {
 		log.Fatal(err)
 	}
 
+	issuer, err := LoadOrCreateIssuer(store, strings.TrimSuffix(*origin, "/"), filepath.Join(filepath.Dir(*dbPath), "token_signing_key"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	auth := &Auth{wa: wa, store: store, https: u.Scheme == "https", ceremonies: map[string]*ceremony{}}
-	api := &API{auth: auth, store: store}
+	api := &API{auth: auth, store: store, issuer: issuer}
 
 	srv := &http.Server{
 		Addr:              *addr,
@@ -95,6 +100,8 @@ func routes(auth *Auth, api *API, static string) *http.ServeMux {
 	mux.HandleFunc("GET /api/agents/{id}/keys", api.AgentKeys)
 	mux.HandleFunc("POST /api/grants", api.requireUser(api.CreateGrant))
 	mux.HandleFunc("GET /api/grants", api.requireUser(api.ListGrants))
+	mux.HandleFunc("POST /oauth/token", api.Token)
+	mux.HandleFunc("GET /.well-known/jwks.json", api.JWKS)
 
 	mux.Handle("GET /", http.FileServer(http.Dir(static)))
 	return mux
